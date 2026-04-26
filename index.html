@@ -17,22 +17,35 @@
         .view-section { display: none !important; }
         .view-section.view-active { display: block !important; width: 100%; height: 100%; }
         ::-webkit-scrollbar { display: none; }
+        
         body {
-            background-color: #e5e7eb !important; 
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            min-height: 100vh !important;
-            margin: 0 !important;
+            background-color: #e5e7eb; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            font-family: 'Inter', sans-serif;
         }
+
         .app-container {
-            width: 100% !important;
-            max-width: 420px !important;
-            background-color: white !important;
-            height: 100dvh !important;
-            position: relative !important;
-            box-shadow: 0 0 40px rgba(0,0,0,0.1) !important;
-            overflow: hidden !important;
+            width: 100%;
+            height: 100dvh;
+            background-color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* PC ya Tablet par kholne par Mobile jaisa dikhega */
+        @media (min-width: 600px) {
+            .app-container {
+                max-width: 400px;
+                height: 90vh;
+                max-height: 850px;
+                border-radius: 2rem;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+                border: 8px solid #1f2937; /* Mobile bezel look */
+            }
         }
     </style>
 </head>
