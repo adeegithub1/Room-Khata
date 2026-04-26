@@ -14,17 +14,43 @@
     </script>
     
     <style>
-        .view-section { display: none !important; }
-        .view-section.view-active { display: block !important; width: 100%; height: 100%; }
-        ::-webkit-scrollbar { display: none; }
+        /* Smooth Fade & Slide-In keyframe */
+        @keyframes slideInUp {
+            from { transform: translateY(15px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Modern room card enter animation */
+        @keyframes zoomIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Apply standard transitions to views */
+        .view-section { 
+            display: none !important; 
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
+        }
+
+        .view-section.view-active { 
+            display: block !important; 
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            /* Is class par screen transition lagti hai */
+            animation: slideInUp 0.3s ease-out;
+        }
         
+        ::-webkit-scrollbar { display: none; }
+
         body {
             background-color: #e5e7eb; 
-            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100dvh;
+            margin: 0;
             font-family: 'Inter', sans-serif;
         }
 
@@ -34,18 +60,24 @@
             background-color: white;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease-in-out;
         }
 
-        /* PC ya Tablet par kholne par Mobile jaisa dikhega */
+        /* Responsive Mobile Look for PC */
         @media (min-width: 600px) {
             .app-container {
                 max-width: 400px;
                 height: 90vh;
                 max-height: 850px;
                 border-radius: 2rem;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-                border: 8px solid #1f2937; /* Mobile bezel look */
+                box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+                border: 8px solid #1f2937;
             }
+        }
+
+        /* Animation class for room cards (called from JS) */
+        .room-card-animate {
+            animation: zoomIn 0.3s ease-out both;
         }
     </style>
 </head>
@@ -55,22 +87,22 @@
         <div id="view-login" class="view-section view-active bg-white overflow-y-auto">
             <div class="flex flex-col justify-center items-center min-h-full px-6 py-12">
                 <div class="w-full max-w-sm text-center mt-10">
-                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-100">
+                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-100 shadow-inner scale-100 hover:scale-110 transition-transform duration-300">
                         <i class="fa-solid fa-lock text-3xl text-blue-600"></i>
                     </div>
                     <h1 class="text-3xl font-bold text-gray-800 mb-2">Room Khata</h1>
                     <p class="text-gray-500 mb-8 font-medium">Owner Login - Secure your data</p>
 
                     <form id="auth-form" class="space-y-4">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-envelope"></i></div>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors"><i class="fa-solid fa-envelope"></i></div>
                             <input type="email" id="auth-email" required class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Email Address">
                         </div>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-key"></i></div>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors"><i class="fa-solid fa-key"></i></div>
                             <input type="password" id="auth-password" required class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Password">
                         </div>
-                        <button type="submit" class="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-150 flex items-center justify-center gap-2">
                             <span>Login Securely</span> <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </form>
@@ -85,7 +117,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <div><p class="text-primary-100 text-sm font-medium">Good Morning,</p><h2 class="text-2xl font-bold">Owner</h2></div>
                 </div>
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex justify-between items-center">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex justify-between items-center shadow-inner">
                     <div><p class="text-primary-100 text-xs font-medium uppercase tracking-wider mb-1">Total Revenue</p><p class="text-2xl font-bold" id="total-revenue">₹0</p></div>
                     <div class="h-10 w-px bg-white/20"></div>
                     <div class="text-right"><p class="text-primary-100 text-xs font-medium uppercase tracking-wider mb-1">Pending</p><p class="text-2xl font-bold text-yellow-300" id="total-pending">₹0</p></div>
@@ -93,15 +125,15 @@
             </header>
             <div class="h-full overflow-y-auto px-6 pt-6 pb-32">
                 <div class="grid grid-cols-3 gap-3 mb-8">
-                    <button onclick="switchView('view-add-room')" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary-300 text-center">
+                    <button onclick="switchView('view-add-room')" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary-300 hover:shadow-md active:scale-95 transition-all text-center">
                         <div class="w-10 h-10 bg-blue-50 text-primary-600 rounded-full flex items-center justify-center text-lg"><i class="fa-solid fa-plus"></i></div>
                         <span class="text-[11px] font-bold text-gray-700">Add Room</span>
                     </button>
-                    <button onclick="switchView('view-add-tenant')" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary-300 text-center">
+                    <button onclick="switchView('view-add-tenant')" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary-300 hover:shadow-md active:scale-95 transition-all text-center">
                         <div class="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center text-lg"><i class="fa-solid fa-user-plus"></i></div>
                         <span class="text-[11px] font-bold text-gray-700">Add Tenant</span>
                     </button>
-                    <button onclick="shareLink()" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary-300 text-center">
+                    <button onclick="shareLink()" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:border-primary-300 hover:shadow-md active:scale-95 transition-all text-center">
                         <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-lg"><i class="fa-solid fa-share-nodes"></i></div>
                         <span class="text-[11px] font-bold text-gray-700">Share Link</span>
                     </button>
@@ -109,11 +141,11 @@
                 <div class="flex justify-between items-end mb-4"><h3 class="text-lg font-bold text-gray-800">Recent Rooms</h3></div>
                 <div id="room-list-home" class="space-y-3"></div>
             </div>
-            <nav class="absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20">
-                <button onclick="switchView('view-owner')" class="flex flex-col items-center text-primary-600 gap-1 w-1/4"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-semibold">Home</span></button>
-                <button onclick="switchView('view-rooms')" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-door-open text-xl"></i><span class="text-[10px] font-semibold">Rooms</span></button>
-                <button onclick="switchView('view-ledger')" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-wallet text-xl"></i><span class="text-[10px] font-semibold">Ledger</span></button>
-                <button onclick="handleLogout()" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-right-from-bracket text-xl"></i><span class="text-[10px] font-semibold">Logout</span></button>
+            <nav class="absolute bottom-0 left-0 w-full bg-white/90 backdrop-blur-sm border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.03)]">
+                <button onclick="switchView('view-owner')" class="flex flex-col items-center text-primary-600 gap-1 active:scale-90 transition-transform w-1/4"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-semibold">Home</span></button>
+                <button onclick="switchView('view-rooms')" class="flex flex-col items-center text-gray-400 gap-1 active:scale-90 transition-transform w-1/4"><i class="fa-solid fa-door-open text-xl"></i><span class="text-[10px] font-semibold">Rooms</span></button>
+                <button onclick="switchView('view-ledger')" class="flex flex-col items-center text-gray-400 gap-1 active:scale-90 transition-transform w-1/4"><i class="fa-solid fa-wallet text-xl"></i><span class="text-[10px] font-semibold">Ledger</span></button>
+                <button onclick="handleLogout()" class="flex flex-col items-center text-gray-400 gap-1 active:scale-90 transition-transform w-1/4"><i class="fa-solid fa-right-from-bracket text-xl"></i><span class="text-[10px] font-semibold">Logout</span></button>
             </nav>
         </div>
 
@@ -123,10 +155,10 @@
                 <p class="text-primary-100 text-sm mt-1">All your active properties and tenants.</p>
             </header>
             <div class="h-full overflow-y-auto px-6 pt-6 pb-32">
-                <button onclick="switchView('view-add-room')" class="w-full bg-primary-100 text-primary-700 font-bold py-3 rounded-xl hover:bg-primary-200 mb-6 flex justify-center items-center gap-2"><i class="fa-solid fa-plus"></i> Add New Room</button>
+                <button onclick="switchView('view-add-room')" class="w-full bg-primary-100 text-primary-700 font-bold py-3 rounded-xl hover:bg-primary-200 active:scale-95 mb-6 flex justify-center items-center gap-2 transition"><i class="fa-solid fa-plus"></i> Add New Room</button>
                 <div id="room-list-all" class="space-y-3"></div>
             </div>
-            <nav class="absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20">
+            <nav class="absolute bottom-0 left-0 w-full bg-white/90 backdrop-blur-sm border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.03)]">
                 <button onclick="switchView('view-owner')" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-semibold">Home</span></button>
                 <button onclick="switchView('view-rooms')" class="flex flex-col items-center text-primary-600 gap-1 w-1/4"><i class="fa-solid fa-door-open text-xl"></i><span class="text-[10px] font-semibold">Rooms</span></button>
                 <button onclick="switchView('view-ledger')" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-wallet text-xl"></i><span class="text-[10px] font-semibold">Ledger</span></button>
@@ -139,7 +171,7 @@
                 <h2 class="text-2xl font-bold">Financial Ledger</h2>
             </header>
             <div class="h-full overflow-y-auto px-6 pt-6 pb-32">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex justify-between">
+                <div class="bg-white p-5 rounded-2xl shadow-lg border border-gray-100 mb-6 flex justify-between">
                     <div><p class="text-xs text-gray-500 uppercase font-semibold">Total Expected</p><p class="text-xl font-bold text-gray-800 mt-1" id="ledger-total-due">₹0</p></div>
                     <div class="w-px bg-gray-200"></div>
                     <div class="text-right"><p class="text-xs text-gray-500 uppercase font-semibold">Collected</p><p class="text-xl font-bold text-green-600 mt-1" id="ledger-collected">₹0</p></div>
@@ -147,7 +179,7 @@
                 <h3 class="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Payment Status</h3>
                 <div id="room-list-ledger" class="space-y-3"></div>
             </div>
-            <nav class="absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20">
+            <nav class="absolute bottom-0 left-0 w-full bg-white/90 backdrop-blur-sm border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.03)]">
                 <button onclick="switchView('view-owner')" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-house text-xl"></i><span class="text-[10px] font-semibold">Home</span></button>
                 <button onclick="switchView('view-rooms')" class="flex flex-col items-center text-gray-400 gap-1 w-1/4"><i class="fa-solid fa-door-open text-xl"></i><span class="text-[10px] font-semibold">Rooms</span></button>
                 <button onclick="switchView('view-ledger')" class="flex flex-col items-center text-primary-600 gap-1 w-1/4"><i class="fa-solid fa-wallet text-xl"></i><span class="text-[10px] font-semibold">Ledger</span></button>
@@ -156,49 +188,49 @@
         </div>
 
         <div id="view-add-room" class="view-section bg-white overflow-y-auto">
-            <div class="pt-12 pb-6 px-6 relative z-10">
-                <button onclick="switchView('view-owner')" class="absolute top-12 left-6 text-gray-400"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <div class="pt-12 pb-6 px-6 relative z-10 shadow-sm border-b">
+                <button onclick="switchView('view-owner')" class="absolute top-12 left-6 text-gray-400 active:scale-75 transition-transform"><i class="fa-solid fa-arrow-left text-xl"></i></button>
                 <h2 class="text-2xl font-bold text-gray-800 mt-10">Add New <br><span class="text-primary-600">Room</span></h2>
             </div>
-            <div class="px-6 pb-12">
+            <div class="px-6 pb-12 pt-6 bg-gray-50 h-full">
                 <form id="add-room-form" class="space-y-5" onsubmit="handleAddRoomSubmit(event)">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Room Number</label>
-                        <input type="text" id="new-room-no" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" placeholder="e.g. 103">
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 transition-colors group-focus-within:text-blue-600">Room Number</label>
+                        <input type="text" id="new-room-no" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" placeholder="e.g. 103">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tenant Name (Optional)</label>
-                        <input type="text" id="new-tenant-name" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" placeholder="Leave empty if vacant">
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 transition-colors group-focus-within:text-blue-600">Tenant Name (Optional)</label>
+                        <input type="text" id="new-tenant-name" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" placeholder="Leave empty if vacant">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Monthly Rent (₹)</label>
-                        <input type="number" id="new-rent-amount" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none" placeholder="e.g. 7500">
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 transition-colors group-focus-within:text-blue-600">Monthly Rent (₹)</label>
+                        <input type="number" id="new-rent-amount" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" placeholder="e.g. 7500">
                     </div>
-                    <button type="submit" class="w-full bg-primary-600 text-white font-semibold py-3.5 rounded-xl mt-6">Save Room Details</button>
+                    <button type="submit" class="w-full bg-primary-600 active:scale-95 text-white font-semibold py-3.5 rounded-xl mt-8 shadow-lg shadow-blue-500/30 transition">Save Room Details</button>
                 </form>
             </div>
         </div>
 
         <div id="view-add-tenant" class="view-section bg-white overflow-y-auto">
-            <div class="pt-12 pb-6 px-6 relative z-10">
-                <button onclick="switchView('view-owner')" class="absolute top-12 left-6 text-gray-400"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <div class="pt-12 pb-6 px-6 relative z-10 shadow-sm border-b">
+                <button onclick="switchView('view-owner')" class="absolute top-12 left-6 text-gray-400 active:scale-75 transition-transform"><i class="fa-solid fa-arrow-left text-xl"></i></button>
                 <h2 class="text-2xl font-bold text-gray-800 mt-10">Assign <br><span class="text-green-600">Tenant</span></h2>
             </div>
-            <div class="px-6 pb-12">
+            <div class="px-6 pb-12 pt-6 bg-gray-50 h-full">
                 <form id="add-tenant-owner-form" class="space-y-5" onsubmit="handleAddTenantSubmit(event)">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Room</label>
-                        <select id="assign-room-id" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"></select>
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 transition-colors group-focus-within:text-green-600">Select Room</label>
+                        <select id="assign-room-id" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition appearance-none"></select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
-                        <input type="text" id="assign-tenant-name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none">
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 transition-colors group-focus-within:text-green-600">Full Name</label>
+                        <input type="text" id="assign-tenant-name" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Monthly Rent (₹)</label>
-                        <input type="number" id="assign-tenant-rent" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none">
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 transition-colors group-focus-within:text-green-600">Monthly Rent (₹)</label>
+                        <input type="number" id="assign-tenant-rent" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
                     </div>
-                    <button type="submit" class="w-full bg-green-600 text-white font-semibold py-3.5 rounded-xl mt-6">Assign Tenant</button>
+                    <button type="submit" class="w-full bg-green-600 active:scale-95 text-white font-semibold py-3.5 rounded-xl mt-8 shadow-lg shadow-green-500/30 transition">Assign Tenant</button>
                 </form>
             </div>
         </div>
