@@ -2,14 +2,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+// BHAi YAHAN APNI ASLI FIREBASE KEYS DAALNA MAT BHOOLNA
 const firebaseConfig = {
   apiKey: "AIzaSyAp6oj_KE0nxfInqVG44P42pYljKVHKaHo",
   authDomain: "room-khata-43cd3.firebaseapp.com",
-  projectId: "room-khata-43cd3",
-  storageBucket: "room-khata-43cd3.firebasestorage.app",
-  messagingSenderId: "739355882640",
-  appId: "1:739355882640:web:8bd01c7b05d8129fa29415",
-  measurementId: "G-3ZJJ8NGT56"
+  projectId: "room-khata-43cd3"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -829,28 +826,33 @@ window.fetchRoomsFromCloud = async function() {
 
 window.renderRoomsList = function() {
     const container = document.getElementById('buildings-container');
-    const emptyState = document.getElementById('empty-buildings');
-    container.innerHTML = '';
     
     // Apply filters first
     const filteredRooms = applyFilters(roomsData);
     
     if (filteredRooms.length === 0) {
         if (roomsData.length === 0) {
-            emptyState.classList.remove('hidden');
-        } else {
-            emptyState.classList.add('hidden');
             container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon"><i class="fa-solid fa-filter"></i></div>
-                <p class="text-gray-500 font-medium">No results found</p>
+            <div class="empty-state pt-8 text-center">
+                <div class="empty-icon text-6xl text-gray-300 mb-4"><i class="fa-regular fa-building"></i></div>
+                <p class="text-gray-500 font-medium text-lg">No buildings yet</p>
+                <p class="text-gray-400 text-sm mt-1">Click "+ Add Building" to get started</p>
+            </div>`;
+        } else {
+            container.innerHTML = `
+            <div class="empty-state pt-8 text-center">
+                <div class="empty-icon text-6xl text-gray-300 mb-4"><i class="fa-solid fa-filter"></i></div>
+                <p class="text-gray-500 font-medium text-lg">No results found</p>
                 <p class="text-gray-400 text-sm mt-1">Try adjusting your search or filters</p>
             </div>`;
+        }
+        if(document.getElementById('clear-search-btn')) {
+            document.getElementById('clear-search-btn').classList.add('hidden');
         }
         return;
     }
     
-    emptyState.classList.add('hidden');
+    container.innerHTML = '';
     
     // Update search visibility
     if (filterState.searchQuery) {
@@ -1698,7 +1700,7 @@ window.applyFilters = function(rooms) {
     // Apply search filter
     if (filterState.searchQuery) {
         filtered = filtered.filter(r => {
-            const roomNo = r.roomNo.toLowerCase();
+            const roomNo = String(r.roomNo || '').toLowerCase();
             const tenantName = (r.tenantName || '').toLowerCase();
             return roomNo.includes(filterState.searchQuery) || tenantName.includes(filterState.searchQuery);
         });
