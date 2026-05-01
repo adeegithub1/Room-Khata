@@ -494,11 +494,16 @@ window.showConfirm = function(title, message, btnText, isDanger = false) {
         }
 
         modal.classList.remove('hidden');
+        modal.classList.add('flex');
         setTimeout(() => modal.classList.remove('opacity-0'), 10);
 
         const closeAndResolve = (val) => {
             modal.classList.add('opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); resolve(val); }, 300);
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex');
+                resolve(val); 
+            }, 300);
             document.getElementById('confirm-cancel-btn').onclick = null;
             okBtn.onclick = null;
         };
@@ -519,11 +524,16 @@ window.showPrompt = function(title, placeholder) {
         input.value = "";
 
         modal.classList.remove('hidden');
+        modal.classList.add('flex');
         setTimeout(() => { modal.classList.remove('opacity-0'); input.focus(); }, 10);
 
         const closeAndResolve = (val) => {
             modal.classList.add('opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); resolve(val); }, 300);
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex');
+                resolve(val); 
+            }, 300);
             document.getElementById('prompt-cancel-btn').onclick = null;
             document.getElementById('prompt-ok-btn').onclick = null;
         };
@@ -550,6 +560,7 @@ window.shareRoomLink = function(roomId, roomNo) {
     const modal = document.getElementById('share-modal');
     const sheet = document.getElementById('share-sheet');
     modal.classList.remove('hidden');
+    modal.classList.add('flex');
     setTimeout(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); }, 10);
 }
 
@@ -558,7 +569,10 @@ window.closeShareModal = function() {
     const sheet = document.getElementById('share-sheet');
     modal.classList.add('opacity-0');
     sheet.classList.add('translate-y-full');
-    setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    setTimeout(() => { 
+        modal.classList.add('hidden'); 
+        modal.classList.remove('flex');
+    }, 300);
 }
 
 window.shareViaWhatsAppAction = function() {
@@ -1054,9 +1068,14 @@ window.renderRoomsList = function() {
                             </button>
                         </div>
                         ` : `
-                        <button onclick="quickAssign('${room.id}', '${room.roomNo}')" class="w-full py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 text-[11px] font-bold rounded-lg transition-all active:scale-95">
-                            + Assign
-                        </button>
+                        <div class="flex gap-1">
+                            <button onclick="quickAssign('${room.id}', '${room.roomNo}')" class="flex-1 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[11px] font-bold rounded-lg transition-all active:scale-95">
+                                + Manual
+                            </button>
+                            <button onclick="shareRoomLink('${room.id}', '${room.roomNo}')" class="flex-1 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 text-[11px] font-bold rounded-lg transition-all active:scale-95">
+                                🔗 Invite
+                            </button>
+                        </div>
                         `}
                     </div>
                     `;
@@ -1356,11 +1375,16 @@ window.quickAssign = function(id, roomNo) {
     document.getElementById('kyc-movein').value = new Date().toISOString().slice(0, 10);
     document.getElementById('kyc-deposit').value = '';
     document.getElementById('kyc-idproof').value = '';
-    document.getElementById('kyc-modal').classList.remove('hidden');
+    
+    const modal = document.getElementById('kyc-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 window.closeKycModal = function() {
-    document.getElementById('kyc-modal').classList.add('hidden');
+    const modal = document.getElementById('kyc-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
     kycRoomId = null;
 }
 
@@ -1425,11 +1449,16 @@ window.togglePaymentStatus = async function(id, currentStatus) {
     const totalRent = (room.rent || 0) + (room.electricityBill || 0);
     document.getElementById('pp-total-rent').innerText = `₹${totalRent.toLocaleString('en-IN')}`;
     document.getElementById('pp-amount-input').value = totalRent;
-    document.getElementById('partial-payment-modal').classList.remove('hidden');
+    
+    const modal = document.getElementById('partial-payment-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 window.closePartialPaymentModal = function() {
-    document.getElementById('partial-payment-modal').classList.add('hidden');
+    const modal = document.getElementById('partial-payment-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
     partialPaymentRoomId = null;
 }
 
@@ -1904,7 +1933,10 @@ window.openElectricityModal = function(roomId, roomNo) {
     document.getElementById('elec-curr').value = '';
     document.getElementById('elec-rate').value = '8';
     document.getElementById('elec-preview').classList.add('hidden');
-    document.getElementById('electricity-modal').classList.remove('hidden');
+    
+    const modal = document.getElementById('electricity-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 
     // Live calculation on input
     ['elec-prev', 'elec-curr', 'elec-rate'].forEach(id => {
@@ -1929,7 +1961,9 @@ function updateElecPreview() {
 }
 
 window.closeElectricityModal = function() {
-    document.getElementById('electricity-modal').classList.add('hidden');
+    const modal = document.getElementById('electricity-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
     electricityRoomId = null;
 }
 
@@ -1972,11 +2006,16 @@ window.openEditRoom = function(roomId, roomNo, rent) {
     document.getElementById('edit-room-id').value = roomId;
     document.getElementById('edit-room-no').value = roomNo;
     document.getElementById('edit-room-rent').value = rent;
-    document.getElementById('edit-room-modal').classList.remove('hidden');
+    
+    const modal = document.getElementById('edit-room-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 window.closeEditRoomModal = function() {
-    document.getElementById('edit-room-modal').classList.add('hidden');
+    const modal = document.getElementById('edit-room-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 window.submitEditRoom = async function() {
@@ -2003,11 +2042,16 @@ window.submitEditRoom = async function() {
 window.openEditBuilding = function(buildingId, currentName) {
     document.getElementById('edit-building-id').value = buildingId;
     document.getElementById('edit-building-name').value = currentName;
-    document.getElementById('edit-building-modal').classList.remove('hidden');
+    
+    const modal = document.getElementById('edit-building-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 window.closeEditBuildingModal = function() {
-    document.getElementById('edit-building-modal').classList.add('hidden');
+    const modal = document.getElementById('edit-building-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 window.submitEditBuilding = async function() {
@@ -2289,13 +2333,15 @@ window.openUpiModal = function() {
     const upiIdEl = document.getElementById('upi-id-display');
     if (upiIdEl) upiIdEl.textContent = 'owner@upi'; // Owner can configure this
 
-    document.getElementById('upi-modal').classList.remove('hidden');
-    document.getElementById('upi-modal').classList.add('flex');
+    const modal = document.getElementById('upi-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 window.closeUpiModal = function() {
-    document.getElementById('upi-modal').classList.add('hidden');
-    document.getElementById('upi-modal').classList.remove('flex');
+    const modal = document.getElementById('upi-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 window.openUpiApp = function(app) {
@@ -2337,8 +2383,9 @@ window.openComplaintModal = function() {
         b.classList.add('border-gray-700', 'text-gray-400');
     });
 
-    document.getElementById('complaint-modal').classList.remove('hidden');
-    document.getElementById('complaint-modal').classList.add('flex');
+    const modal = document.getElementById('complaint-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 
     // Live char count
     const desc = document.getElementById('complaint-desc');
@@ -2350,8 +2397,9 @@ window.openComplaintModal = function() {
 }
 
 window.closeComplaintModal = function() {
-    document.getElementById('complaint-modal').classList.add('hidden');
-    document.getElementById('complaint-modal').classList.remove('flex');
+    const modal = document.getElementById('complaint-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 window.selectComplaintType = function(btn, type) {
