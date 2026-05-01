@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Room Khata Pro - Property Manager</title>
+    <title>Room Khata - Rent. Track. Relax.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -502,6 +502,8 @@
                 transform: translateY(0) scale(1);
             }
         }
+        
+        .empty-state {
             text-align: center;
             padding: 40px 20px;
             animation: fadeUp 0.6s ease-out;
@@ -594,7 +596,7 @@
         #header-greeting-row {
             transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-            max-height: 120px;
+            max-height: 160px;
         }
 
         #header-stats-row {
@@ -645,11 +647,18 @@
         <div id="view-login" class="view-section bg-gradient-to-b from-white to-gray-50">
             <div class="flex flex-col justify-center items-center min-h-full px-6 py-12">
                 <div class="w-full max-w-sm fade-in-delay">
-                    <div class="w-28 h-28 bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl transform hover:-translate-y-2 transition-transform duration-300 float-bubble">
-                        <i class="fa-solid fa-building text-5xl text-white"></i>
+                    <!-- NEW BRANDED LOGO -->
+                    <div class="w-28 h-28 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:-translate-y-2 transition-transform duration-300 float-bubble">
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 10L12 3l9 7" />
+                            <path d="M5 10v11a2 2 0 002 2h10a2 2 0 002-2V10" />
+                            <rect x="8" y="10" width="8" height="10" rx="1" />
+                            <path d="M10 13h4" />
+                            <path d="M10 16h4" />
+                        </svg>
                     </div>
-                    <h1 class="text-5xl font-black text-gray-900 mb-2 text-center">Khata<span class="gradient-text">Pro</span></h1>
-                    <p class="text-gray-500 mb-10 font-medium text-center text-lg">Smart Property Management Dashboard</p>
+                    <h1 class="text-5xl font-black text-gray-900 mb-2 text-center tracking-tight">Room<span class="text-blue-600">Khata</span></h1>
+                    <p class="text-gray-400 mb-10 font-bold text-center text-xs tracking-[0.3em]">RENT. TRACK. RELAX.</p>
 
                     <form id="auth-form" class="space-y-4 fade-in-delay" onsubmit="handleLoginSubmit(event)">
                         <div class="relative group">
@@ -838,6 +847,20 @@
                 <div id="header-greeting-row" class="relative z-10">
                     <div class="flex justify-between items-start mb-5">
                         <div>
+                            <!-- BRANDING INJECTED HERE -->
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center border border-white/10 backdrop-blur-sm shadow-sm">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 10L12 3l9 7" />
+                                        <path d="M5 10v11a2 2 0 002 2h10a2 2 0 002-2V10" />
+                                        <rect x="8" y="10" width="8" height="10" rx="1" />
+                                        <path d="M10 13h4" />
+                                        <path d="M10 16h4" />
+                                    </svg>
+                                </div>
+                                <span class="text-white/90 font-black text-sm tracking-wide">Room<span class="text-blue-300">Khata</span></span>
+                            </div>
+
                             <p id="header-time-label" class="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">Good Night ✨</p>
                             <h2 id="header-owner-greeting" class="text-4xl font-black tracking-tight leading-tight">Properties</h2>
                         </div>
