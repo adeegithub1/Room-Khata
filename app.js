@@ -1814,8 +1814,90 @@ function downloadFile(content, filename) {
     document.body.removeChild(element);
 }
 
-window.toggleNotifications = function() {
-    showToast("🔔 You have 2 pending payments", "success");
+window.toggleNotifications = function(event) {
+    if(event) event.stopPropagation();
+    
+    let dropdown = document.getElementById('notification-dropdown');
+    
+    // Agar dropdown nahi bana hai HTML me, toh JS se khud bana dega (No HTML edit required)
+    if(!dropdown) {
+        const header = document.getElementById('dashboard-header');
+        if(header) {
+            dropdown = document.createElement('div');
+            dropdown.id = 'notification-dropdown';
+            dropdown.className = 'hidden flex-col absolute top-[80px] right-6 w-64 sm:w-80 bg-white/95 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl overflow-hidden z-[100] text-left transition-all';
+            dropdown.innerHTML = `
+                <div class="p-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex justify-between items-center shadow-md z-10 relative">
+                    <h3 class="text-xs font-black tracking-wider uppercase"><i class="fa-solid fa-bell mr-1"></i> Notifications</h3>
+                    <button onclick="window.toggleNotifications()" class="text-white/80 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="notification-dropdown-list" class="max-h-64 overflow-y-auto bg-white/90 relative z-0">
+                    <div class="p-6 text-center text-gray-400 text-xs font-bold">No new notifications ✨</div>
+                </div>
+            `;
+            header.appendChild(dropdown);
+            window.updateNotificationDropdown(); // Populate list
+        }
+    }
+
+    if(dropdown) {
+        dropdown.classList.toggle('hidden');
+        dropdown.classList.toggle('flex');
+        if(!dropdown.classList.contains('hidden')) dropdown.style.animation = "dropIn 0.3s forwards";
+    }
+}
+
+window.updateNotificationDropdown = function() {
+    const list = document.getElementById('notification-dropdown-list');
+    const badges = document.querySelectorAll('.notification-badge');
+    let total = currentVerifications.length + currentComplaints.length;
+    
+    // Update red dot counts
+    badges.forEach(b => {
+        if(total > 0) { b.classList.remove('hidden'); b.style.display = 'block'; } 
+        else { b.style.display = 'none'; }
+    });
+
+    if(!list) return;
+    if(total === 0) {
+        list.innerHTML = `<div class="p-6 text-center text-gray-400 text-xs font-bold">No new notifications ✨</div>`;
+        return;
+    }
+
+    let html = '';
+    currentVerifications.forEach(v => {
+        html += `
+        <div class="p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-all flex items-center gap-3" onclick="window.location.hash='#owner-verifications-section'; document.getElementById('owner-verifications-section')?.classList.remove('hidden'); window.toggleNotifications();">
+            <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-lg shadow-sm shrink-0">₹</div>
+            <div>
+                <p class="text-sm font-black text-gray-800">Room ${v.roomNo} paid ₹${v.paymentAmount || v.rent}</p>
+                <p class="text-xs font-bold text-purple-600 mt-0.5">Click to verify</p>
+            </div>
+        </div>`;
+    });
+
+    currentComplaints.forEach(c => {
+        html += `
+        <div class="p-4 border-b border-gray-100 hover:bg-red-50 cursor-pointer transition-all flex items-center gap-3" onclick="window.location.hash='#owner-complaints-section'; document.getElementById('owner-complaints-section')?.classList.remove('hidden'); window.toggleNotifications();">
+            <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm shadow-sm shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="min-w-0">
+                <p class="text-sm font-black text-gray-800">Room ${c.roomNo} Issue</p>
+                <p class="text-xs text-gray-500 truncate w-[180px]">${c.type} - ${c.description}</p>
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+}
+
+// Click outside to close dropdown
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        if (!dropdown.contains(e.target) && !e.target.closest('button[onclick*="toggleNotifications"]')) {
+            dropdown.classList.add('hidden'); dropdown.classList.remove('flex');
+        }
+    }
+});
 }
 
 window.toggleDarkMode = async function() {
@@ -2412,28 +2494,50 @@ window.closeUpiModal = function() {
     modal.classList.remove('flex');
 }
 
-window.openUpiApp = function(app) {
-    if (!tenantRoomData) return;
-    const balanceDue = tenantRoomData.balanceDue ?? ((tenantRoomData.rent || 0) + (tenantRoomData.electricityBill || 0));
-    const upiId = tenantRoomData.ownerUpiId || 'owner@upi';
-    const name = encodeURIComponent('Rent Payment');
-    const amount = balanceDue;
+window.openUpiApp = async function(appName) {
+    if (!tenantRoomData || !currentUser) return;
 
+    const balanceDue = tenantRoomData.balanceDue ?? ((tenantRoomData.rent || 0) + (tenantRoomData.electricityBill || 0));
+    
+    // 1. Status ko pending_verification karna
+    try {
+        await updateDoc(doc(db, 'rooms', tenantRoomData.id), {
+            status: 'pending_verification',
+            paymentInitiatedAt: new Date().toISOString(),
+            paymentInitiatedBy: currentUser.uid,
+            paymentApp: appName,
+            paymentAmount: balanceDue
+        });
+
+        await addDoc(collection(db, 'paymentHistory'), {
+            roomId: tenantRoomData.id,
+            ownerId: tenantRoomData.ownerId,
+            tenantUid: currentUser.uid,
+            tenantName: tenantRoomData.tenantName,
+            roomNo: tenantRoomData.roomNo,
+            amount: balanceDue,
+            status: 'pending_verification',
+            paidDate: new Date().toISOString(),
+            month: new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        });
+    } catch (err) {
+        console.warn('Could not set pending_verification:', err);
+    }
+
+    // 2. Asli UPI app kholna
+    const upiId = tenantRoomData.ownerUpiId || 'owner@upi';
+    const pn = encodeURIComponent('Rent Payment');
     const upiUrls = {
-        gpay: `tez://upi/pay?pa=${upiId}&pn=${name}&am=${amount}&cu=INR`,
-        phonepe: `phonepe://pay?pa=${upiId}&pn=${name}&am=${amount}&cu=INR`,
-        paytm: `paytmmp://pay?pa=${upiId}&pn=${name}&am=${amount}&cu=INR`
+        gpay: `tez://upi/pay?pa=${upiId}&pn=${pn}&am=${balanceDue}&cu=INR`,
+        phonepe: `phonepe://pay?pa=${upiId}&pn=${pn}&am=${balanceDue}&cu=INR`,
+        paytm: `paytmmp://pay?pa=${upiId}&pn=${pn}&am=${balanceDue}&cu=INR`
     };
 
-    const url = upiUrls[app];
-    if (url) {
-        window.location.href = url;
-        setTimeout(() => {
-            showToast('App not found. Please use QR code above.', 'error');
-        }, 1500);
-    }
     closeUpiModal();
-}
+    window.location.href = upiUrls[appName] || upiUrls.gpay;
+    setTimeout(() => { showToast('App not found. Please use the QR code above.', 'error'); }, 1800);
+};
 
 // ==========================================
 // COMPLAINT MODAL
@@ -2939,30 +3043,30 @@ window.openUpiApp = async function(appName) {
 let ownerComplaintsUnsubscribe = null;
 let ownerVerificationsUnsubscribe = null;
 
+// State variables for notifications
+let currentVerifications = [];
+let currentComplaints = [];
+
 window.subscribeToOwnerInbox = function() {
-  if (!currentUser) return;
+    if (!currentUser) return;
 
-  // ── Complaints Listener ──
-  if (ownerComplaintsUnsubscribe) ownerComplaintsUnsubscribe();
-  const complaintsQ = query(
-    collection(db, 'complaints'),
-    where('ownerId', '==', currentUser.uid),
-    where('status', '==', 'open')
-  );
-  ownerComplaintsUnsubscribe = onSnapshot(complaintsQ, (snap) => {
-    renderOwnerComplaints(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
+    // Listen to Complaints
+    const complaintsQ = query(collection(db, 'complaints'), where('ownerId', '==', currentUser.uid), where('status', '==', 'open'));
+    if (ownerComplaintsUnsubscribe) ownerComplaintsUnsubscribe();
+    ownerComplaintsUnsubscribe = onSnapshot(complaintsQ, (snap) => {
+        currentComplaints = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof renderOwnerComplaints === 'function') renderOwnerComplaints(currentComplaints);
+        if (typeof window.updateNotificationDropdown === 'function') window.updateNotificationDropdown();
+    });
 
-  // ── Payment Verifications Listener ──
-  if (ownerVerificationsUnsubscribe) ownerVerificationsUnsubscribe();
-  const verifyQ = query(
-    collection(db, 'rooms'),
-    where('ownerId', '==', currentUser.uid),
-    where('status', '==', 'pending_verification')
-  );
-  ownerVerificationsUnsubscribe = onSnapshot(verifyQ, (snap) => {
-    renderOwnerVerifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
+    // Listen to Payment Verifications
+    const verifyQ = query(collection(db, 'rooms'), where('ownerId', '==', currentUser.uid), where('status', '==', 'pending_verification'));
+    if (ownerVerificationsUnsubscribe) ownerVerificationsUnsubscribe();
+    ownerVerificationsUnsubscribe = onSnapshot(verifyQ, (snap) => {
+        currentVerifications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof renderOwnerVerifications === 'function') renderOwnerVerifications(currentVerifications);
+        if (typeof window.updateNotificationDropdown === 'function') window.updateNotificationDropdown();
+    });
 };
 
 function renderOwnerComplaints(complaints) {
