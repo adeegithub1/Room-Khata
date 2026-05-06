@@ -1898,7 +1898,7 @@ document.addEventListener('click', (e) => {
         }
     }
 });
-}
+
 
 window.toggleDarkMode = async function() {
     showToast("🌙 Dark mode coming soon!", "success");
