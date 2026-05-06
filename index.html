@@ -640,47 +640,51 @@
         }
 
         /* =============================================
-           FEATURE 3: COLLAPSIBLE DASHBOARD HEADER
+           FEATURE 3: COLLAPSIBLE DASHBOARD HEADER (SMOOTH FIX)
            ============================================= */
         #dashboard-header {
-            transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.45s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: padding;
         }
 
-        #header-greeting-row {
-            transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        #header-greeting-row, #header-stats-row {
+            transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+                        opacity 0.3s ease, 
+                        transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             overflow: hidden;
-            max-height: 160px;
+            transform-origin: top center;
         }
 
-        #header-stats-row {
-            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-            max-height: 200px;
-        }
+        #header-greeting-row { max-height: 160px; }
+        #header-stats-row { max-height: 200px; }
 
         #dashboard-header.header-collapsed {
-            padding-top: 0.875rem !important;
-            padding-bottom: 0.875rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
         }
 
-        #dashboard-header.header-collapsed #header-greeting-row {
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-8px);
-        }
-
+        #dashboard-header.header-collapsed #header-greeting-row,
         #dashboard-header.header-collapsed #header-stats-row {
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-6px);
+            max-height: 0 !important;
+            opacity: 0 !important;
+            transform: scaleY(0.9) translateY(-10px);
+            pointer-events: none;
+        }
+
+        /* Jhatka rokne ke liye andar ke margins ko smooth zero karna */
+        #dashboard-header.header-collapsed #header-greeting-row > div,
+        #dashboard-header.header-collapsed #header-stats-row > div {
+            margin-bottom: 0 !important;
+            transition: margin-bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         /* Collapsed mini title bar */
         #header-mini-bar {
-            transition: opacity 0.25s ease, transform 0.3s ease;
+            transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1), 
+                        opacity 0.3s ease 0.1s, 
+                        transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             opacity: 0;
-            transform: translateY(-6px);
+            transform: translateY(-10px);
             pointer-events: none;
             max-height: 0;
             overflow: hidden;
