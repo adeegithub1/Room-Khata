@@ -3459,3 +3459,31 @@ const _origLoadOwnerProfile = window.loadOwnerProfile;
 // Note: loadOwnerProfile is not window-exposed, we patch auth state instead.
 // The refreshSettingsHeader() is called in switchView, so it'll auto-update.
 
+// 📱 MAGIC BACK BUTTON HANDLER 📱
+
+// 1. App khulte hi Home (Dashboard) ki history save kar lo
+window.history.pushState({ screen: 'home' }, '', '#home');
+
+// 2. Phone ka system "Back" button dabne par kya hoga:
+window.addEventListener('popstate', function (event) {
+    if (event.state && event.state.screen === 'settings') {
+        // Agar user setting page pe tha, to humein home dikhana hai
+        // (Yahan apna Home Screen show karne wala code daal, jaise:)
+        document.getElementById('view-settings').classList.add('hidden');
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        
+    } else {
+        // Agar history stack khali hai (matlab user Home par hai aur Exit karna chahta hai)
+        let confirmExit = confirm("Kya aap sach mein app se bahar aana chahte hain?");
+        
+        if (!confirmExit) {
+            // Agar usne 'Cancel' daba diya, toh app band hone se rok do
+            // Aur wapas Home ki history push kar do
+            window.history.pushState({ screen: 'home' }, '', '#home');
+        } else {
+            // Agar usne 'OK' daba diya, toh app properly close hone do
+            window.history.back(); 
+        }
+    }
+});
+
