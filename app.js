@@ -3468,7 +3468,6 @@ window.history.pushState({ screen: 'home' }, '', '#home');
 window.addEventListener('popstate', function (event) {
     if (event.state && event.state.screen === 'settings') {
         // Agar user setting page pe tha, to humein home dikhana hai
-        // (Yahan apna Home Screen show karne wala code daal, jaise:)
         document.getElementById('view-settings').classList.add('hidden');
         document.getElementById('view-dashboard').classList.remove('hidden');
         
@@ -3486,4 +3485,3 @@ window.addEventListener('popstate', function (event) {
         }
     }
 });
-
