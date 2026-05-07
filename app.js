@@ -515,16 +515,21 @@ window.showPrompt = function(title, placeholder) {
 // SHARE MODAL
 // ==========================================
 
-window.shareRoomLink = function(roomId, roomNo) {
-    currentShareLink = `${window.location.origin}/?room=${roomId}`;
-    document.getElementById('share-title').innerText = `Room ${roomNo}`;
-    const modal = document.getElementById('share-modal');
-    const sheet = document.getElementById('share-sheet');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    setTimeout(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); }, 10);
-}
+// Naya Smart Share Function
+function shareRoomLink(roomName, connectionCode) {
+    // App ka link (yahan tu chahe toh ?code= param bhi laga sakta hai auto-fill ke liye)
+    let appLink = `https://room-khata.vercel.app?code=${connectionCode}`;
+    
+    // WhatsApp ke liye mast sa message banayenge
+    let message = `Hello! Aapka rent track karne ke liye maine Room Khata app setup kiya hai.\n\n`;
+    message += `👉 App yahan se kholen: ${appLink}\n`;
+    message += `🔑 Login karte time ye Connection Code daalein: *${connectionCode}*\n\n`;
+    message += `Is code ko dalte hi aap direct apne room (${roomName}) se connect ho jayenge!`;
 
+    // URL format mein convert karke WhatsApp khol do
+    let whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
 window.closeShareModal = function() {
     const modal = document.getElementById('share-modal');
     const sheet = document.getElementById('share-sheet');
