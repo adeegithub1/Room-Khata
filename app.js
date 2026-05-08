@@ -1942,21 +1942,6 @@ async function handleTenantCodeLogin(phone, code) {
     window.switchView('view-tenant-dashboard');
     subscribeToTenantRoom(roomId);
 }
-    // Step 4: Save a lightweight tenant profile
-    await setDoc(doc(db, "tenantProfiles", tenantUid), {
-        phone    : phone,
-        roomId   : roomId,
-        joinedAt : new Date().toISOString()
-    }, { merge: true });
-
-    showToast(`🎉 स्वागत है! Room ${roomData.roomNo} join हो गया।`, "success");
-
-    // onAuthStateChanged will pick up the UID and route to tenant dashboard
-    tenantRoomId = roomId;
-    window.switchView('view-tenant-dashboard');
-    subscribeToTenantRoom(roomId);
-}
-
 window.confirmLogout = async function() {
     const isConfirmed = await showConfirm("Logout", "Are you sure you want to logout?", "Yes, Logout", true);
     if(isConfirmed) {
