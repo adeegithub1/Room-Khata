@@ -849,6 +849,13 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
+        // 🚨 YAHAN HAI ASLI FIX 🚨
+        // Agar user Anonymous (Tenant) hai par DB update abhi baaki hai, toh yahin ruk jao
+        if (user.isAnonymous) {
+            // handleTenantCodeLogin function khud page change karega jab data save ho jayega
+            return; 
+        }
+
         // ── OWNER ROUTE ──────────────────────────────────
         await loadOwnerProfile(user.uid);
 
