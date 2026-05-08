@@ -1861,6 +1861,10 @@ window.addNewRoom = async function(buildingId) {
 // TENANT CODE LOGIN
 // ==========================================
 
+// ==========================================
+// TENANT CODE LOGIN (FIXED VERSION)
+// ==========================================
+
 window.handleTenantCodeLoginSubmit = async function(e) {
     e.preventDefault();
     const phone = document.getElementById('tenant-login-phone').value.trim();
@@ -1884,13 +1888,25 @@ window.handleTenantCodeLoginSubmit = async function(e) {
     try {
         await handleTenantCodeLogin(phone, code);
     } catch(err) {
+        console.error("Login Error: ", err);
+        // Ab agar koi error aayega toh screen pe laal rang me dikhega, button phasega nahi!
+        showTenantLoginError(err.message); 
         btn.innerHTML = ogHTML;
         btn.disabled = false;
     }
 };
 
 async function handleTenantCodeLogin(phone, code) {
-    // Step 1: Query Firestore for a room with matching connectionCode
+    // STEP 1: PEHLE AUTHENTICATE KARO (Taki Database read karne ki permission mil jaye)
+    let tenantUid = null;
+    if (currentUser) {
+        tenantUid = currentUser.uid;
+    } else {
+        const cred = await signInAnonymously(auth);
+        tenantUid  = cred.user.uid;
+    }
+
+    // STEP 2: AB DATABASE MEIN CODE CHECK KARO
     const roomQuery = query(collection(db, "rooms"), where("connectionCode", "==", code));
     const roomSnap  = await getDocs(roomQuery);
 
@@ -1905,15 +1921,6 @@ async function handleTenantCodeLogin(phone, code) {
     const roomId   = roomDoc.id;
     const roomData = roomDoc.data();
 
-    // Step 2: Anonymous Firebase Auth
-    let tenantUid = null;
-    if (currentUser) {
-        tenantUid = currentUser.uid;
-    } else {
-        const cred = await signInAnonymously(auth);
-        tenantUid  = cred.user.uid;
-    }
-
     // Step 3: Update the room with tenant's WhatsApp & UID
     await updateDoc(doc(db, "rooms", roomId), {
         tenantPhone : phone,
@@ -1921,6 +1928,20 @@ async function handleTenantCodeLogin(phone, code) {
         status      : roomData.status || "pending"
     });
 
+    // Step 4: Save a lightweight tenant profile
+    await setDoc(doc(db, "tenantProfiles", tenantUid), {
+        phone    : phone,
+        roomId   : roomId,
+        joinedAt : new Date().toISOString()
+    }, { merge: true });
+
+    showToast(`🎉 स्वागत है! Room ${roomData.roomNo} join हो गया।`, "success");
+
+    // onAuthStateChanged will pick up the UID and route to tenant dashboard
+    tenantRoomId = roomId;
+    window.switchView('view-tenant-dashboard');
+    subscribeToTenantRoom(roomId);
+}
     // Step 4: Save a lightweight tenant profile
     await setDoc(doc(db, "tenantProfiles", tenantUid), {
         phone    : phone,
