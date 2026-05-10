@@ -1961,7 +1961,7 @@ document.addEventListener('click', (e) => {
         }
     }
 });
-}
+
 
 window.toggleDarkMode = async function() {
     showToast("🌙 Dark mode coming soon!", "success");
@@ -3320,4 +3320,3 @@ document.addEventListener('DOMContentLoaded', () => {
 const _origLoadOwnerProfile = window.loadOwnerProfile;
 // Note: loadOwnerProfile is not window-exposed, we patch auth state instead.
 // The refreshSettingsHeader() is called in switchView, so it'll auto-update.
-
