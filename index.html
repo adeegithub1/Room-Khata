@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2D1B69">
+<link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Room Khata Pro · किराया ट्रैकर</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Poppins"', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] },
+                    animation: {
+                        shimmer: 'shimmer 2s infinite', slideIn: 'slideIn 0.6s cubic-bezier(0.16,1,0.3,1)',
+                        fadeUp: 'fadeUp 0.5s ease-out', scaleIn: 'scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                        bounce3d: 'bounce3d 0.8s ease-out', float: 'float 3s ease-in-out infinite',
+                        pulse2: 'pulse2 2s cubic-bezier(0.4,0,0.6,1) infinite'
+                    },
+                    keyframes: {
+                        shimmer: { '0%': { backgroundPosition: '-1000px 0' }, '100%': { backgroundPosition: '1000px 0' } },
+                        slideIn: { '0%': { opacity: '0', transform: 'translateX(-30px)' }, '100%': { opacity: '1', transform: 'translateX(0)' } },
+                        fadeUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        scaleIn: { '0%': { opacity: '0', transform: 'scale(0.8)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+                        bounce3d: { '0%': { transform: 'translateY(-10px) scale(1)' }, '50%': { transform: 'translateY(0) scale(1.05)' }, '100%': { transform: 'translateY(-10px) scale(1)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-20px)' } },
+                        pulse2: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.5' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --saffron: #FF6600; --saffron2: #FF8C00; --gold: #F59E0B; --gold2: #D97706;
+            --indigo: #2D1B69;  --indigo2: #4C1D95;  --emerald: #059669; --rose: #E11D48;
+            --cream: #F4F6FB;   --paper: #FFFFFF;
+            --surface: #FFFFFF; --surface2: #F4F6FB; --border: #ECEEF4;
+            --text-primary: #1A1D2E; --text-secondary: #6B7280; --text-muted: #9CA3AF;
+            --shadow-sm: 0 2px 8px rgba(30,27,75,.07);
+            --shadow-md: 0 6px 24px rgba(30,27,75,.10);
+            --shadow-lg: 0 16px 48px rgba(30,27,75,.13);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: #DDE1EE;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100dvh; font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent; overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,102,0,.3); border-radius: 10px; }
+
+        /* ── APP SHELL ─────────────────────────────────── */
+        .app-container {
+            width: 100%; height: 100dvh;
+            background: var(--cream); position: relative; overflow: hidden;
+        }
+        @media (min-width: 600px) {
+            .app-container {
+                max-width: 460px; height: 92vh; max-height: 900px;
+                border-radius: 2.5rem;
+                box-shadow: 0 60px 120px -20px rgba(30,27,75,.4), 0 0 0 1px rgba(255,255,255,.2);
+            }
+        }
+        @media (max-width: 599px) { .app-container { border-radius: 0; } }
+
+        /* ── KEYFRAMES ─────────────────────────────────── */
+        @keyframes scaleFadeIn { 0% { opacity:0; transform:scale(.94) translateY(16px); } 100% { opacity:1; transform:scale(1) translateY(0); } }
+        @keyframes slideUpBouncy { 0% { opacity:0; transform:translateY(36px); } 65% { transform:translateY(-5px); } 100% { opacity:1; transform:translateY(0); } }
+        @keyframes popIn { 0% { opacity:0; transform:scale(.65) rotate(-8deg); } 65% { transform:scale(1.1); } 100% { opacity:1; transform:scale(1) rotate(0deg); } }
+        @keyframes shimmerLoad { 0% { background-position:-800px 0; } 100% { background-position:800px 0; } }
+        @keyframes slideInRight  { 0% { opacity:0; transform:translateX(100%); } 100% { opacity:1; transform:translateX(0); } }
+        @keyframes slideOutLeft  { 0% { opacity:1; transform:translateX(0); } 100% { opacity:0; transform:translateX(-100%); } }
+        @keyframes fadeUp  { 0% { opacity:0; transform:translateY(24px); } 100% { opacity:1; transform:translateY(0); } }
+        @keyframes scaleIn { 0% { opacity:0; transform:scale(.82) translateY(16px); } 100% { opacity:1; transform:scale(1) translateY(0); } }
+        @keyframes fadeOut { 0% { opacity:1; } 100% { opacity:0; } }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @keyframes gridStagger { 0% { opacity:0; transform:translateY(28px) scale(.95); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes navPop { 0% { transform:translateY(5px) scale(.88); } 100% { transform:translateY(0) scale(1); } }
+        @keyframes rupeeFloat { 0%,100% { transform:translateY(0) rotate(-4deg); } 50% { transform:translateY(-12px) rotate(4deg); } }
+        @keyframes gradientShift { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+        @keyframes pulseGlow { 0%,100% { box-shadow:0 0 0 0 rgba(225,29,72,.3); } 50% { box-shadow:0 0 0 8px rgba(225,29,72,0); } }
+        @keyframes slideUpReceipt { 0% { opacity:0; transform:translateY(40px) scale(.95); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes borderPulse { 0%,100% { border-color:rgba(255,102,0,.4); } 50% { border-color:rgba(255,102,0,1); } }
+
+        /* ── ONBOARDING ─────────────────────────────────── */
+        .onboarding-slide-enter { animation: slideInRight .55s cubic-bezier(0.34,1.56,.64,1) forwards; }
+        .onboarding-slide-exit  { animation: slideOutLeft .55s cubic-bezier(0.34,1.56,.64,1) forwards; }
+
+        /* ── VIEWS ──────────────────────────────────────── */
+        .view-section { display:none !important; position:absolute; top:0; left:0; width:100%; height:100%; }
+        .view-section.view-active { display:flex !important; flex-direction:column; animation:scaleFadeIn .45s cubic-bezier(0.34,1.56,.64,1) forwards; }
+
+        /* ── ROOM GRID ──────────────────────────────────── */
+        .room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(136px,1fr)); gap:10px; margin-top:10px; }
+        @media (max-width:380px) { .room-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); } }
+        .room-card-grid { opacity:0; animation:slideUpBouncy .5s cubic-bezier(0.34,1.56,.64,1) forwards; }
+        .room-card-grid:nth-child(1){animation-delay:.05s} .room-card-grid:nth-child(2){animation-delay:.10s}
+        .room-card-grid:nth-child(3){animation-delay:.15s} .room-card-grid:nth-child(4){animation-delay:.20s}
+        .room-card-grid:nth-child(5){animation-delay:.25s} .room-card-grid:nth-child(6){animation-delay:.30s}
+        .room-card-grid:nth-child(7){animation-delay:.35s} .room-card-grid:nth-child(8){animation-delay:.40s}
+
+        /* ── BUILDING CARDS ─────────────────────────────── */
+        .building-card { opacity:0; animation:gridStagger .5s cubic-bezier(0.34,1.56,.64,1) forwards; }
+        .building-card:nth-child(1){animation-delay:.08s} .building-card:nth-child(2){animation-delay:.16s}
+        .building-card:nth-child(3){animation-delay:.24s} .building-card:nth-child(4){animation-delay:.32s}
+
+        /* ── BTN RIPPLE ─────────────────────────────────── */
+        .btn-premium { position:relative; overflow:hidden; transition:all .28s cubic-bezier(0.34,1.56,.64,1); }
+        .btn-premium:active { transform:scale(.95); }
+        .btn-premium::before { content:''; position:absolute; top:50%; left:50%; width:0; height:0; border-radius:50%; background:rgba(255,255,255,.25); transform:translate(-50%,-50%); transition:width .55s,height .55s; }
+        .btn-premium:active::before { width:280px; height:280px; }
+
+        /* ── GLASS (light surface) ───────────────────────── */
+        .glass-card { background:rgba(255,255,255,.55); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1.5px solid rgba(255,255,255,.7); }
+        .glass-nav  { background:rgba(255,255,255,.94); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-top:1.5px solid var(--border); box-shadow:0 -4px 24px rgba(30,27,75,.07); }
+        .blur-background { position:fixed; inset:0; background:rgba(30,27,75,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+
+        /* ── SKELETON ───────────────────────────────────── */
+        .skeleton { background:linear-gradient(90deg,#ECEEF4 25%,#E4E6EF 50%,#ECEEF4 75%); background-size:800px 100%; animation:shimmerLoad 1.8s infinite; border-radius:12px; }
+
+        /* ── STAT / TYPOGRAPHY ──────────────────────────── */
+        .stat-number { font-family:'JetBrains Mono',monospace; font-weight:700; letter-spacing:-.5px; }
+        .fade-in-delay { opacity:0; animation:fadeUp .6s ease-out both; }
+        .fade-in-delay:nth-child(1){animation-delay:.08s} .fade-in-delay:nth-child(2){animation-delay:.16s}
+        .fade-in-delay:nth-child(3){animation-delay:.24s} .fade-in-delay:nth-child(4){animation-delay:.32s}
+        .fade-in-delay:nth-child(5){animation-delay:.40s}
+
+        /* ── HEADER (now light/white) ────────────────────── */
+        /* Time-of-day classes now paint only a top accent strip */
+        .header-morning, .header-afternoon, .header-evening, .header-night {
+            background: var(--surface) !important;
+            animation: none !important;
+        }
+
+        /* ── COLLAPSIBLE HEADER ─────────────────────────── */
+        #dashboard-header { transition:padding .3s cubic-bezier(.4,0,.2,1); will-change:padding; }
+        #header-greeting-row { transition:opacity .25s ease,transform .3s cubic-bezier(.4,0,.2,1),max-height .3s cubic-bezier(.4,0,.2,1); overflow:hidden; max-height:200px; }
+        #header-stats-row    { transition:opacity .3s ease,transform .32s cubic-bezier(.4,0,.2,1),max-height .36s cubic-bezier(.4,0,.2,1); overflow:hidden; max-height:220px; }
+        #header-mini-bar     { transition:opacity .25s ease,transform .28s ease; opacity:0; transform:translateY(-6px); pointer-events:none; max-height:0; overflow:hidden; }
+        #dashboard-header.header-collapsed { padding-top:.875rem !important; padding-bottom:.875rem !important; }
+        #dashboard-header.header-collapsed #header-greeting-row { max-height:0; opacity:0; transform:translateY(-8px); }
+        #dashboard-header.header-collapsed #header-stats-row    { max-height:0; opacity:0; transform:translateY(-6px); }
+        #dashboard-header.header-collapsed #header-mini-bar     { opacity:1; transform:translateY(0); pointer-events:auto; max-height:60px; }
+
+        /* ── BOTTOM NAV ─────────────────────────────────── */
+        .navbar-item { transition:all .28s cubic-bezier(0.34,1.56,.64,1); color:#9CA3AF; }
+        .navbar-item.active { color:var(--saffron) !important; transform:scale(1.18) translateY(-2px); animation:navPop .35s cubic-bezier(0.34,1.56,.64,1); }
+        .nav-dot { width:4px; height:4px; border-radius:50%; background:var(--saffron); opacity:0; transition:opacity .2s; margin:0 auto; }
+        .navbar-item.active .nav-dot { opacity:1; }
+
+        /* ── FILTER CHIPS ───────────────────────────────── */
+        [data-filter] { transition:all .28s ease; }
+        [data-filter].active-filter { background:linear-gradient(135deg,var(--saffron),var(--saffron2)) !important; color:white !important; box-shadow:0 4px 14px rgba(255,102,0,.25); transform:scale(1.05); }
+
+        /* ── QUICK ACTION TILES ─────────────────────────── */
+        .quick-tile { border-radius:18px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 8px; transition:all .3s cubic-bezier(0.34,1.56,.64,1); cursor:pointer; }
+        .quick-tile:active { transform:scale(.92); }
+        .quick-tile i { transition:transform .3s cubic-bezier(0.34,1.56,.64,1); }
+        .quick-tile:active i { transform:scale(1.35) rotate(-6deg); }
+
+        /* ── SECTION LABEL ──────────────────────────────── */
+        .sec-label { font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--text-muted); display:flex; align-items:center; gap:8px; }
+        .sec-label::before,.sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+        /* ── MODAL INPUTS ───────────────────────────────── */
+        .modal-input { background:var(--surface2); border:1.5px solid var(--border); border-radius:14px; outline:none; font-family:'Poppins',sans-serif; font-weight:500; color:var(--text-primary); transition:border-color .2s,box-shadow .2s; }
+        .modal-input:focus { background:white; border-color:var(--saffron); box-shadow:0 0 0 3px rgba(255,102,0,.1); }
+
+        /* ── AUTH INPUTS ────────────────────────────────── */
+        .auth-input { width:100%; background:var(--surface2); border:1.5px solid var(--border); border-radius:14px; outline:none; font-family:'Poppins',sans-serif; font-weight:500; font-size:15px; color:var(--text-primary); transition:all .25s; padding:0; }
+        .auth-input:focus { background:white; border-color:var(--saffron); box-shadow:0 0 0 4px rgba(255,102,0,.1); }
+
+        /* ── SETTINGS ROW ───────────────────────────────── */
+        .settings-row { background:white; border:1.5px solid var(--border); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all .25s; }
+        .settings-row:hover { background:var(--surface2); border-color:#DDE0EA; }
+
+        /* ── TENANT DASHBOARD ───────────────────────────── */
+        #view-tenant-dashboard { background:linear-gradient(160deg,#0F172A 0%,#1E1B4B 45%,#0F172A 100%); }
+        .tenant-hero { background:linear-gradient(135deg,#1E1B4B 0%,#4C1D95 55%,#7C3AED 100%); position:relative; overflow:hidden; }
+        .tenant-hero::before { content:''; position:absolute; top:-50%; right:-25%; width:320px; height:320px; background:rgba(255,255,255,.06); border-radius:50%; pointer-events:none; }
+        .tenant-hero::after  { content:''; position:absolute; bottom:-25%; left:-8%; width:210px; height:210px; background:rgba(255,102,0,.06); border-radius:50%; pointer-events:none; }
+        .due-card { background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(12px); }
+        .tenant-card { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); transition:all .3s ease; }
+        .tenant-card:hover { background:rgba(255,255,255,.08); }
+        .history-item { animation:slideUpBouncy .5s cubic-bezier(0.34,1.56,.64,1) forwards; }
+        .amount-due-pulse { animation:pulseGlow 2s ease-in-out infinite; }
+
+        /* ── UPI MODAL ──────────────────────────────────── */
+        #upi-modal .upi-qr { background:white; border-radius:16px; padding:18px; display:flex; align-items:center; justify-content:center; }
+        .upi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .upi-app-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:14px; cursor:pointer; transition:all .25s cubic-bezier(0.34,1.56,.64,1); }
+        .upi-app-btn:hover,.upi-app-btn:active { background:rgba(255,102,0,.2); border-color:rgba(255,102,0,.4); transform:translateY(-3px) scale(1.05); }
+
+        /* ── COMPLAINT ──────────────────────────────────── */
+        #complaint-modal .complaint-type-btn { transition:all .2s; }
+        #complaint-modal .complaint-type-btn.selected { background:rgba(255,102,0,.2); border-color:var(--saffron); color:#FED7AA; }
+        .complaint-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+        .complaint-chip.open { background:#FEF3C7; color:#92400E; }
+        .complaint-chip.resolved { background:#D1FAE5; color:#065F46; }
+        .complaint-chip.high { background:#FEE2E2; color:#991B1B; }
+
+        /* ── MISC ───────────────────────────────────────── */
+        .stat-box { animation:popIn .6s cubic-bezier(0.34,1.56,.64,1); }
+        .stat-box:nth-child(1){animation-delay:.1s} .stat-box:nth-child(2){animation-delay:.2s}
+        .badge-pulse,.notification-badge { animation:pulse2 2s ease-in-out infinite; }
+        .verification-banner { background:linear-gradient(135deg,#F59E0B,#D97706); border-radius:16px; animation:pulse2 2.5s ease-in-out infinite; }
+        .toast { animation:slideUpBouncy .45s cubic-bezier(0.34,1.56,.64,1); }
+        .modal-content { animation:scaleIn .38s cubic-bezier(0.34,1.56,.64,1); }
+        .spinner { display:inline-block; width:15px; height:15px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .75s linear infinite; }
+        .live-dot { width:8px; height:8px; background:#22C55E; border-radius:50%; animation:pulse2 1.5s ease-in-out infinite; }
+        .empty-state { text-align:center; padding:40px 20px; animation:fadeUp .6s ease-out; }
+        .empty-icon { font-size:60px; opacity:.25; margin-bottom:16px; }
+        canvas { max-height:300px; }
+        .chart-container { position:relative; animation:fadeUp .8s ease-out; }
+        .expense-item { animation:slideUpBouncy .55s cubic-bezier(0.34,1.56,.64,1) forwards; }
+        .payment-status-paid    { background:linear-gradient(135deg,rgba(5,150,105,.08),transparent); border-left:4px solid #059669; }
+        .payment-status-pending { background:linear-gradient(135deg,rgba(245,158,11,.08),transparent); border-left:4px solid #F59E0B; }
+
+        /* ── RECEIPT MODAL ──────────────────────────────── */
+        #receipt-modal { animation:fadeUp .3s ease-out forwards; }
+        #receipt-modal.opacity-0 { animation:fadeOut .3s ease-out forwards; }
+        #receipt-container { animation:slideUpReceipt .5s cubic-bezier(0.34,1.56,.64,1) forwards; }
+
+        /* ── LANGUAGE TOGGLE ────────────────────────────── */
+        .lang-toggle-track { width:58px; height:30px; background:#E5E7EB; border-radius:15px; position:relative; cursor:pointer; transition:background .3s; }
+        .lang-toggle-track.active { background:var(--saffron); }
+        .lang-toggle-thumb { position:absolute; top:3px; left:3px; width:24px; height:24px; background:white; border-radius:50%; transition:transform .35s cubic-bezier(0.34,1.56,.64,1); box-shadow:0 2px 8px rgba(0,0,0,.18); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; color:#374151; }
+        .lang-toggle-track.active .lang-toggle-thumb { transform:translateX(28px); color:var(--saffron); }
+
+        /* ── LOGIN PANEL TRANSITIONS ────────────────────── */
+        @keyframes slideInFromRight { 0%{opacity:0;transform:translateX(40px)} 100%{opacity:1;transform:translateX(0)} }
+        @keyframes slideInFromLeft  { 0%{opacity:0;transform:translateX(-40px)} 100%{opacity:1;transform:translateX(0)} }
+        .login-panel-enter-right { animation:slideInFromRight .42s cubic-bezier(0.34,1.56,.64,1) both; }
+        .login-panel-enter-left  { animation:slideInFromLeft  .42s cubic-bezier(0.34,1.56,.64,1) both; }
+
+        /* ── CODE INPUT ─────────────────────────────────── */
+        #tenant-login-code { letter-spacing:.18em; }
+
+        /* ── DASHBOARD HEADER (light redesign) ──────────── */
+        #dashboard-header {
+            background: var(--surface) !important;
+            animation: none !important;
+            border-bottom: 1.5px solid var(--border);
+        }
+        /* Stat pill cards inside header */
+        .stat-pill {
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: 18px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        /* Mini collapsed bar text */
+        #mini-owner-name { color: var(--text-primary); }
+
+        /* ── ROOM CARDS (elevated white) ────────────────── */
+        .room-card-grid {
+            background: white;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow .25s ease, transform .25s ease;
+        }
+        .room-card-grid:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+        /* ── BUILDING HEADER (pill redesign) ───────────── */
+        .building-header-pill {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ── QUICK TILES (white surface) ────────────────── */
+        .quick-tile { background: white !important; border: 1.5px solid var(--border) !important; box-shadow: var(--shadow-sm); }
+
+        /* ── OWNER DASHBOARD BACKGROUND ─────────────────── */
+        #view-owner { background: var(--cream) !important; }
+        #dashboard-scroll { background: var(--cream); }
+    </style>
+</head>
+<body>
+<div class="app-container" id="main-app">
+
+<!-- ════════════════════════════════════════
+     LOGIN
+════════════════════════════════════════ -->
+<div id="view-login" class="view-section flex flex-col" style="background:linear-gradient(160deg,#FFFBF5 0%,#FEF3C7 55%,#FFFBF5 100%)">
+    <div class="flex flex-col justify-center items-center min-h-full px-6 py-10 overflow-y-auto">
+        <div class="w-full max-w-sm">
+
+            <!-- ── Logo ── -->
+            <div class="flex flex-col items-center mb-8">
+                <div class="relative mb-5">
+                    <div class="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl"
+                         style="background:linear-gradient(135deg,#FF6600,#F59E0B);box-shadow:0 20px 50px rgba(255,102,0,.4);animation:rupeeFloat 3.5s ease-in-out infinite">
+                        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 10L12 3l9 7"/><path d="M5 10v11a2 2 0 002 2h10a2 2 0 002-2V10"/>
+                            <rect x="8" y="10" width="8" height="10" rx="1"/><path d="M10 13h4"/><path d="M10 16h4"/>
+                        </svg>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center shadow-lg">
+                        <span class="text-white font-black text-sm">₹</span>
+                    </div>
+                </div>
+                <h1 class="text-4xl font-black tracking-tight" style="color:var(--indigo)">Room<span style="color:var(--saffron)">Khata</span></h1>
+                <p class="text-xs font-bold tracking-[.3em] mt-1" style="color:#9CA3AF">RENT · TRACK · RELAX</p>
+                <p class="text-xs font-semibold mt-1" style="color:var(--gold2)">किराया खाता प्रो 🏠</p>
+            </div>
+
+            <!-- ══════════════════════════════════
+                 PANEL 1 — Role Selection
+            ══════════════════════════════════ -->
+            <div id="login-role-panel">
+                <p class="text-center text-sm font-bold mb-5" style="color:#6B7280">आप कौन हैं? / Who are you?</p>
+
+                <!-- Owner Button -->
+                <button type="button" onclick="showLoginPanel('owner')"
+                    class="w-full mb-4 rounded-3xl p-5 text-left flex items-center gap-4 btn-premium transition-all active:scale-95 shadow-lg"
+                    style="background:linear-gradient(135deg,#2D1B69 0%,#4C1D95 60%,#6D28D9 100%);box-shadow:0 12px 32px rgba(45,27,105,.35)">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md" style="background:rgba(255,255,255,.15)">
+                        <i class="fa-solid fa-key text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-black text-lg leading-tight">मैं मकान मालिक हूँ</p>
+                        <p class="text-purple-200 text-xs font-semibold mt-0.5">I am an Owner / Landlord</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-white/60 ml-auto"></i>
+                </button>
+
+                <!-- Tenant Button -->
+                <button type="button" onclick="showLoginPanel('tenant')"
+                    class="w-full rounded-3xl p-5 text-left flex items-center gap-4 btn-premium transition-all active:scale-95 shadow-lg"
+                    style="background:linear-gradient(135deg,#FF6600 0%,#FF8C00 60%,#F59E0B 100%);box-shadow:0 12px 32px rgba(255,102,0,.35)">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-md" style="background:rgba(255,255,255,.18)">
+                        <i class="fa-solid fa-house-user text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-black text-lg leading-tight">मैं किरायेदार हूँ</p>
+                        <p class="text-orange-100 text-xs font-semibold mt-0.5">I am a Tenant / Kirayedaar</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-white/60 ml-auto"></i>
+                </button>
+
+                <p class="mt-6 text-sm text-center" style="color:#6B7280">
+                    नया account? <button type="button" onclick="switchView('view-signup')" class="font-bold" style="color:var(--saffron)">Create Account</button>
+                </p>
+            </div>
+
+            <!-- ══════════════════════════════════
+                 PANEL 2a — Owner Email/Password
+            ══════════════════════════════════ -->
+            <div id="login-owner-panel" class="hidden" style="animation:slideInRight .45s cubic-bezier(0.34,1.56,.64,1) both">
+                <!-- Back -->
+                <button type="button" onclick="showLoginPanel('role')"
+                    class="flex items-center gap-2 font-bold mb-5 active:scale-95 transition-all text-sm"
+                    style="color:#9CA3AF">
+                    <i class="fa-solid fa-arrow-left"></i> वापस जाएं
+                </button>
+
+                <!-- Header chip -->
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style="background:linear-gradient(135deg,#2D1B69,#6D28D9)">
+                        <i class="fa-solid fa-key text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-black text-base" style="color:var(--indigo)">मकान मालिक Login</p>
+                        <p class="text-xs" style="color:#9CA3AF">Owner Sign In</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-6" style="border:1.5px solid #DDD6FE;box-shadow:0 20px 60px rgba(45,27,105,.1)">
+                    <form id="auth-form" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+                        <div class="relative">
+                            <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-sm" style="color:#7C3AED"></i>
+                            <input type="email" id="auth-email" required class="auth-input pl-11 pr-4 py-3.5" placeholder="your@email.com">
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-4 top-3.5 text-sm" style="color:#7C3AED"></i>
+                            <input type="password" id="auth-password" required class="auth-input pl-11 pr-4 py-3.5" placeholder="••••••••">
+                        </div>
+                        <button id="login-btn" type="submit"
+                                class="w-full py-4 mt-2 text-white font-black rounded-2xl text-lg btn-premium flex justify-center items-center gap-2"
+                                style="background:linear-gradient(135deg,#2D1B69,#6D28D9);box-shadow:0 8px 28px rgba(45,27,105,.35)">
+                            <span>Sign In / साइन इन</span><i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+                <p class="mt-5 text-sm text-center" style="color:#6B7280">
+                    नया account? <button type="button" onclick="switchView('view-signup')" class="font-bold" style="color:var(--saffron)">Create Account</button>
+                </p>
+            </div>
+
+            <!-- ══════════════════════════════════
+                 PANEL 2b — Tenant Code Login
+            ══════════════════════════════════ -->
+            <div id="login-tenant-panel" class="hidden" style="animation:slideInRight .45s cubic-bezier(0.34,1.56,.64,1) both">
+                <!-- Back -->
+                <button type="button" onclick="showLoginPanel('role')"
+                    class="flex items-center gap-2 font-bold mb-5 active:scale-95 transition-all text-sm"
+                    style="color:#9CA3AF">
+                    <i class="fa-solid fa-arrow-left"></i> वापस जाएं
+                </button>
+
+                <!-- Header chip -->
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center shadow" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">
+                        <i class="fa-solid fa-house-user text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-black text-base" style="color:var(--indigo)">किरायेदार Login</p>
+                        <p class="text-xs" style="color:#9CA3AF">Tenant Sign In via Code</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-6" style="border:1.5px solid #FED7AA;box-shadow:0 20px 60px rgba(255,102,0,.1)">
+                    <!-- Info banner -->
+                    <div class="flex items-start gap-3 rounded-2xl p-3 mb-5" style="background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border:1.5px solid #FED7AA">
+                        <i class="fa-solid fa-circle-info mt-0.5 shrink-0" style="color:var(--saffron)"></i>
+                        <p class="text-xs font-medium leading-relaxed" style="color:#92400E">
+                            अपना <strong>WhatsApp नंबर</strong> और मकान मालिक से मिला <strong>6-character Code</strong> डालें।
+                        </p>
+                    </div>
+
+                    <form id="tenant-code-form" class="space-y-4" onsubmit="handleTenantCodeLoginSubmit(event)">
+                        <!-- WhatsApp number -->
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">WhatsApp Number</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-3.5 text-sm font-bold" style="color:var(--saffron)">+91</span>
+                                <input type="tel" id="tenant-login-phone" required maxlength="10" pattern="[0-9]{10}"
+                                    class="auth-input pl-14 pr-4 py-3.5 w-full" placeholder="10-digit mobile number">
+                            </div>
+                        </div>
+                        <!-- Connection Code -->
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Connection Code (Room ID)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-hashtag absolute left-4 top-3.5 text-sm" style="color:var(--saffron)"></i>
+                                <input type="text" id="tenant-login-code" required maxlength="9"
+                                    class="auth-input pl-11 pr-4 py-3.5 w-full font-mono tracking-widest uppercase"
+                                    placeholder="जैसे: RK-A4X9B2" oninput="this.value=this.value.toUpperCase()">
+                            </div>
+                        </div>
+                        <!-- Error message area -->
+                        <div id="tenant-login-error" class="hidden rounded-2xl px-4 py-3 text-sm font-semibold" style="background:#FEE2E2;color:#991B1B;border:1.5px solid #FECACA">
+                            <i class="fa-solid fa-circle-exclamation mr-1.5"></i><span id="tenant-login-error-text">Invalid code.</span>
+                        </div>
+                        <button id="tenant-login-btn" type="submit"
+                                class="w-full py-4 mt-1 text-white font-black rounded-2xl text-lg btn-premium flex justify-center items-center gap-2"
+                                style="background:linear-gradient(135deg,#FF6600,#F59E0B);box-shadow:0 8px 28px rgba(255,102,0,.35)">
+                            <span>Room Join करें</span><i class="fa-solid fa-right-to-bracket"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SIGNUP
+════════════════════════════════════════ -->
+<div id="view-signup" class="view-section flex flex-col" style="background:linear-gradient(160deg,#FFFBF5 0%,#FEF3C7 55%,#FFFBF5 100%)">
+    <div class="flex flex-col justify-center items-center min-h-full px-6 py-10 overflow-y-auto">
+        <div class="w-full max-w-sm fade-in-delay">
+            <button onclick="switchView('view-login')" class="flex items-center gap-2 font-bold mb-7 active:scale-95 transition-all" style="color:#9CA3AF">
+                <i class="fa-solid fa-arrow-left"></i> वापस जाएं
+            </button>
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl mb-4"
+                     style="background:linear-gradient(135deg,#7C3AED,#EC4899)">
+                    <i class="fa-solid fa-user-plus text-3xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-black" style="color:var(--indigo)">Create Account</h1>
+                <p class="text-sm font-medium mt-1" style="color:#9CA3AF">अपना profile बनाएं</p>
+            </div>
+            <div class="bg-white rounded-3xl p-7" style="border:1.5px solid #F3E8D0;box-shadow:0 20px 60px rgba(124,58,237,.1)">
+                <form id="signup-form" class="space-y-4" onsubmit="handleSignupSubmit(event)">
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-4 top-3.5 text-sm" style="color:#7C3AED"></i>
+                        <input type="text" id="signup-name" required class="auth-input pl-11 pr-4 py-3.5" placeholder="आपका पूरा नाम">
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-location-dot absolute left-4 top-3.5 text-sm" style="color:#7C3AED"></i>
+                        <textarea id="signup-address" rows="2" class="auth-input pl-11 pr-4 py-3.5 resize-none" placeholder="Property address"></textarea>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-sm" style="color:#7C3AED"></i>
+                        <input type="email" id="signup-email" required class="auth-input pl-11 pr-4 py-3.5" placeholder="your@email.com">
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-sm" style="color:#7C3AED"></i>
+                        <input type="password" id="signup-password" required minlength="6" class="auth-input pl-11 pr-4 py-3.5" placeholder="Min 6 characters">
+                    </div>
+                    <button id="signup-btn" type="submit"
+                            class="w-full py-4 mt-2 text-white font-black rounded-2xl text-lg btn-premium flex justify-center items-center gap-2"
+                            style="background:linear-gradient(135deg,#7C3AED,#EC4899);box-shadow:0 8px 28px rgba(124,58,237,.35)">
+                        <span>Create Account</span><i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+            <p class="mt-6 text-sm text-center" style="color:#6B7280">
+                Account है? <button type="button" onclick="switchView('view-login')" class="font-bold" style="color:var(--saffron)">Sign In</button>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ONBOARDING
+════════════════════════════════════════ -->
+<div id="view-onboarding" class="view-section flex flex-col" style="background:linear-gradient(160deg,#FFFBF5 0%,#FEF3C7 100%)">
+    <!-- Step 1 -->
+    <div id="onboarding-step-1" class="onboarding-step flex flex-col justify-center items-center min-h-full px-6 py-12 onboarding-slide-enter">
+        <div class="w-full max-w-sm text-center">
+            <div class="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl"
+                 style="background:linear-gradient(135deg,#FF6600,#F59E0B)">
+                <i class="fa-solid fa-person text-4xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-black mb-2" style="color:var(--indigo)">नमस्ते! 🙏</h2>
+            <p class="text-sm font-medium mb-10" style="color:#6B7280">Property management शुरू करते हैं</p>
+            <form id="onboarding-form-step1" class="space-y-6" onsubmit="handleOnboardingStep1(event)">
+                <div class="text-left">
+                    <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">आपका नाम क्या है?</label>
+                    <input type="text" id="owner-name" required class="auth-input w-full px-5 py-4" placeholder="Ramesh Sharma">
+                </div>
+                <button type="submit" class="w-full py-4 text-white font-black rounded-2xl text-lg btn-premium flex justify-center items-center gap-2"
+                        style="background:linear-gradient(135deg,#FF6600,#F59E0B);box-shadow:0 8px 28px rgba(255,102,0,.35)">
+                    <i class="fa-solid fa-arrow-right"></i> आगे बढ़ें
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- Step 2 -->
+    <div id="onboarding-step-2" class="onboarding-step hidden flex flex-col justify-center items-center min-h-full px-6 py-12">
+        <div class="w-full max-w-sm text-center">
+            <div class="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl"
+                 style="background:linear-gradient(135deg,#7C3AED,#EC4899)">
+                <i class="fa-solid fa-building text-4xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-black mb-2" style="color:var(--indigo)">बढ़िया, <span id="onboarding-name-display">जी</span>!</h2>
+            <p class="text-sm font-medium mb-10" style="color:#6B7280">कितनी buildings हैं?</p>
+            <form id="onboarding-form-step2" class="space-y-6" onsubmit="handleOnboardingStep2(event)">
+                <div class="grid grid-cols-4 gap-3">
+                    <button type="button" onclick="selectBuildingCount(1)" class="building-count-btn p-4 rounded-2xl font-bold text-xl transition-all border-2 btn-premium" style="background:#F3E8D0;border-color:transparent;color:var(--indigo)" data-count="1">1</button>
+                    <button type="button" onclick="selectBuildingCount(2)" class="building-count-btn p-4 rounded-2xl font-bold text-xl transition-all border-2 btn-premium" style="background:#F3E8D0;border-color:transparent;color:var(--indigo)" data-count="2">2</button>
+                    <button type="button" onclick="selectBuildingCount(3)" class="building-count-btn p-4 rounded-2xl font-bold text-xl transition-all border-2 btn-premium" style="background:#F3E8D0;border-color:transparent;color:var(--indigo)" data-count="3">3</button>
+                    <button type="button" onclick="selectBuildingCount(4)" class="building-count-btn p-4 rounded-2xl font-bold text-xl transition-all border-2 btn-premium" style="background:#F3E8D0;border-color:transparent;color:var(--indigo)" data-count="4">4+</button>
+                </div>
+                <input type="hidden" id="building-count" value="">
+                <button type="submit" id="buildings-submit" disabled class="w-full py-4 text-white font-black rounded-2xl text-lg btn-premium flex justify-center items-center gap-2 disabled:opacity-40"
+                        style="background:linear-gradient(135deg,#7C3AED,#EC4899);box-shadow:0 8px 28px rgba(124,58,237,.3)">
+                    <i class="fa-solid fa-arrow-right"></i> Continue
+                </button>
+            </form>
+            <button type="button" onclick="previousOnboardingStep()" class="mt-6 font-bold" style="color:var(--saffron)">
+                <i class="fa-solid fa-arrow-left mr-1"></i> वापस
+            </button>
+        </div>
+    </div>
+    <!-- Step 3 -->
+    <div id="onboarding-step-3" class="onboarding-step hidden flex flex-col h-full">
+        <header class="text-white px-6 py-6 relative shrink-0" style="background:linear-gradient(135deg,#059669,#047857)">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-black">Property जोड़ें 🏠</h2>
+                    <p class="text-emerald-100 text-sm mt-1">Step <span id="current-building">1</span> of <span id="total-buildings">1</span></p>
+                </div>
+            </div>
+        </header>
+        <div class="flex-1 overflow-y-auto px-6 pt-8 pb-24">
+            <form id="onboarding-building-form" class="space-y-5" onsubmit="handleAddBuildingRoom(event)">
+                <div>
+                    <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Building का नाम</label>
+                    <input type="text" id="building-name" required class="auth-input w-full px-5 py-4" placeholder="जैसे: Sunrise Apartments">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">कितने कमरे?</label>
+                    <input type="number" id="building-rooms-count" required min="1" max="50" class="auth-input w-full px-5 py-4" placeholder="5">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Room नंबर शुरू (Optional)</label>
+                    <input type="text" id="building-start-number" class="auth-input w-full px-5 py-4" placeholder="जैसे 101 → 101,102,103...">
+                </div>
+                <button type="submit" class="w-full py-4 text-white font-black rounded-2xl text-lg btn-premium flex justify-center items-center gap-2"
+                        style="background:linear-gradient(135deg,#059669,#047857);box-shadow:0 8px 28px rgba(5,150,105,.3)">
+                    <i class="fa-solid fa-check"></i> Rooms जोड़ें
+                </button>
+            </form>
+            <div id="rooms-preview" class="mt-8"></div>
+        </div>
+        <div class="absolute bottom-6 left-6 right-6 flex gap-3">
+            <button onclick="previousOnboardingStep()" class="flex-1 py-3 rounded-xl font-bold" style="background:#F3E8D0;color:var(--indigo)">वापस</button>
+            <button id="skip-rooms-btn" onclick="skipAddingMoreRooms()" class="flex-1 py-3 rounded-xl font-bold" style="background:#FEF3C7;color:var(--gold2)">Skip</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     OWNER DASHBOARD
+════════════════════════════════════════ -->
+<div id="view-owner" class="view-section flex flex-col relative overflow-hidden">
+
+    <!-- ── HEADER (light premium) ── -->
+    <header id="dashboard-header" class="header-night bg-white text-gray-900 pt-12 pb-4 px-5 relative shrink-0 z-10 transition-all duration-300">
+
+        <!-- Mini bar (collapsed) -->
+        <div id="header-mini-bar" class="flex justify-between items-center mb-0 relative z-10">
+            <div class="flex items-center gap-3">
+                <div id="mini-time-icon" class="w-8 h-8 rounded-xl flex items-center justify-center text-base" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">🌙</div>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest leading-none" style="color:var(--text-muted)">Properties</p>
+                    <p id="mini-owner-name" class="text-base font-black leading-tight" style="color:var(--text-primary)">Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="mini-revenue" class="text-sm font-black stat-number" style="color:var(--saffron)">₹0</span>
+                <button onclick="toggleNotifications()" class="w-9 h-9 rounded-full flex items-center justify-center relative" style="background:var(--surface2);border:1.5px solid var(--border)">
+                    <i class="fa-regular fa-bell text-sm" style="color:var(--text-secondary)"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full notification-badge"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Full greeting -->
+        <div id="header-greeting-row" class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <!-- Brand pill -->
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl mb-3" style="background:linear-gradient(135deg,rgba(255,102,0,.1),rgba(245,158,11,.1));border:1.5px solid rgba(255,102,0,.18)">
+                        <div class="w-5 h-5 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 10L12 3l9 7"/><path d="M5 10v11a2 2 0 002 2h10a2 2 0 002-2V10"/>
+                            </svg>
+                        </div>
+                        <span class="font-black text-xs tracking-wide" style="color:var(--saffron)">RoomKhata <span style="color:var(--text-muted);font-weight:700">PRO</span></span>
+                    </div>
+                    <p id="header-time-label" class="text-xs font-bold uppercase tracking-widest mb-0.5" style="color:var(--text-muted)">Good Night ✨</p>
+                    <h2 id="header-owner-greeting" class="text-3xl font-black tracking-tight leading-tight" style="color:var(--text-primary)">Properties</h2>
+                </div>
+                <button onclick="toggleNotifications()" class="w-11 h-11 rounded-2xl flex items-center justify-center relative shrink-0" style="background:var(--surface2);border:1.5px solid var(--border);box-shadow:var(--shadow-sm)">
+                    <i class="fa-regular fa-bell text-lg" style="color:var(--text-secondary)"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full notification-badge"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats row — white pill cards -->
+        <div id="header-stats-row" class="relative z-10">
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Revenue card -->
+                <div class="stat-pill stat-box">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">
+                            <i class="fa-solid fa-arrow-trend-up text-white text-[10px]"></i>
+                        </div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest" style="color:var(--text-muted)" data-i18n="totalRevenue">Total Revenue</p>
+                    </div>
+                    <p class="text-2xl font-black tracking-tight stat-number" id="total-revenue" style="color:var(--saffron)">₹0</p>
+                    <p class="text-[10px] mt-1.5 font-semibold" style="color:var(--text-muted)" data-i18n="thisMonth">This month</p>
+                </div>
+                <!-- Pending card -->
+                <div class="stat-pill stat-box">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0" style="background:linear-gradient(135deg,#E11D48,#BE123C)">
+                            <i class="fa-solid fa-clock text-white text-[10px]"></i>
+                        </div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest" style="color:var(--text-muted)" data-i18n="pendingDues">Pending Dues</p>
+                    </div>
+                    <p class="text-2xl font-black tracking-tight stat-number" id="total-pending" style="color:#E11D48">₹0</p>
+                    <p class="text-[10px] mt-1.5 font-semibold" style="color:var(--text-muted)" data-i18n="urgent">Urgent</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- SCROLL CONTENT -->
+    <div id="dashboard-scroll" class="flex-1 overflow-y-auto px-4 pt-5 pb-32">
+
+        <!-- Quick Actions -->
+        <div class="mb-6">
+            <p class="sec-label mb-3" data-i18n="quickActions">Quick Actions</p>
+            <div class="grid grid-cols-4 gap-2.5 mb-3">
+                <button onclick="switchView('view-add-room')" class="quick-tile fade-in-delay">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style="background:linear-gradient(135deg,#FF6600,#F59E0B)"><i class="fa-solid fa-plus text-white text-sm"></i></div>
+                    <span class="text-[10px] font-bold" style="color:var(--saffron)">Add</span>
+                </button>
+                <button onclick="switchView('view-analytics')" class="quick-tile fade-in-delay">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)"><i class="fa-solid fa-chart-line text-white text-sm"></i></div>
+                    <span class="text-[10px] font-bold" style="color:#7C3AED">Chart</span>
+                </button>
+                <button onclick="switchView('view-expenses')" class="quick-tile fade-in-delay">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style="background:linear-gradient(135deg,#E11D48,#BE123C)"><i class="fa-solid fa-receipt text-white text-sm"></i></div>
+                    <span class="text-[10px] font-bold" style="color:#E11D48">Expense</span>
+                </button>
+                <button onclick="switchView('view-reports')" class="quick-tile fade-in-delay">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style="background:linear-gradient(135deg,#059669,#047857)"><i class="fa-solid fa-file-pdf text-white text-sm"></i></div>
+                    <span class="text-[10px] font-bold" style="color:#059669">Report</span>
+                </button>
+            </div>
+            <button onclick="bulkWhatsAppReminder()" class="w-full py-3.5 text-white font-black rounded-2xl btn-premium flex items-center justify-center gap-2"
+                    style="background:linear-gradient(135deg,#22C55E,#16A34A);box-shadow:0 6px 18px rgba(34,197,94,.22)">
+                <i class="fa-brands fa-whatsapp text-xl"></i>
+                <span data-i18n="remindAllPending">Remind All Pending Tenants</span>
+            </button>
+        </div>
+
+        <!-- Complaints Inbox -->
+        <div id="owner-complaints-section" class="mb-5 hidden">
+            <div class="flex items-center justify-between mb-3">
+                <p class="sec-label flex-1" data-i18n="tenantComplaints">Tenant Complaints</p>
+                <span id="open-complaints-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-lg ml-3" style="background:#FEE2E2;color:#991B1B">0 open</span>
+            </div>
+            <div id="owner-complaints-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Pending Verifications -->
+        <div id="owner-verifications-section" class="mb-5 hidden">
+            <div class="flex items-center justify-between mb-3">
+                <p class="sec-label flex-1" data-i18n="paymentRequests">Payment Requests</p>
+                <span id="verifications-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-lg ml-3" style="background:#FEF3C7;color:#92400E">0 pending</span>
+            </div>
+            <div id="owner-verifications-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Buildings -->
+        <div class="mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-black" style="color:var(--text-primary)" data-i18n="yourBuildings">Your Buildings</h3>
+                <button onclick="openAddBuildingModal()" class="text-xs font-black text-white px-3.5 py-2 rounded-xl btn-premium flex items-center gap-1.5"
+                        style="background:linear-gradient(135deg,#FF6600,#F59E0B);box-shadow:0 4px 14px rgba(255,102,0,.25)">
+                    <i class="fa-solid fa-plus text-[10px]"></i> <span data-i18n="addBuilding">Add Building</span>
+                </button>
+            </div>
+
+            <!-- Search -->
+            <div class="relative mb-4">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-sm" style="color:var(--text-muted)"></i>
+                <input type="text" id="building-search-input" placeholder="Room no. या tenant का नाम..."
+                       class="w-full pl-10 pr-10 py-3 rounded-2xl font-medium text-sm outline-none transition-all modal-input"
+                       oninput="updateSearchFilter(this.value)">
+                <button onclick="clearSearchFilter()" id="clear-search-btn" class="hidden absolute right-3 top-3 transition-all hover:scale-110" style="color:var(--text-muted)">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Filter chips -->
+            <div class="flex gap-2 mb-4 overflow-x-auto pb-1" style="scrollbar-width:none">
+                <button onclick="updatePaymentFilter('all')" data-filter="all" class="px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition-all active-filter" style="background:var(--surface2);color:var(--text-primary)" data-i18n="allRooms">All Rooms</button>
+                <button onclick="updatePaymentFilter('pending')" data-filter="pending" class="px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition-all" style="background:#FFF7ED;color:var(--saffron)">⏳ <span data-i18n="pending">Pending</span></button>
+                <button onclick="updatePaymentFilter('paid')" data-filter="paid" class="px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition-all" style="background:#F0FDF4;color:#059669">✓ <span data-i18n="paid">Paid</span></button>
+            </div>
+
+            <!-- Buildings Container -->
+            <div id="buildings-container" class="space-y-5 pb-4">
+                <div id="empty-buildings" class="empty-state">
+                    <div class="empty-icon">🏠</div>
+                    <p class="font-bold" style="color:var(--text-muted)">अभी कोई building नहीं</p>
+                    <p class="text-sm mt-1" style="color:var(--text-muted)">Add Building से शुरू करें</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="absolute bottom-0 left-0 w-full glass-nav px-4 pt-3 flex justify-around items-end z-20"
+         style="padding-bottom:max(20px,env(safe-area-inset-bottom))">
+        <button onclick="switchView('view-owner')" class="navbar-item active flex flex-col items-center gap-1 flex-1 text-center">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-[9px] font-black" data-i18n="home">Home</span>
+            <span class="nav-dot"></span>
+        </button>
+        <button onclick="switchView('view-tenants')" class="navbar-item flex flex-col items-center gap-1 flex-1 text-center transition-colors">
+            <i class="fa-solid fa-users text-xl"></i>
+            <span class="text-[9px] font-black" data-i18n="tenants">Tenants</span>
+            <span class="nav-dot"></span>
+        </button>
+        <button onclick="switchView('view-payments')" class="navbar-item flex flex-col items-center gap-1 flex-1 text-center transition-colors">
+            <i class="fa-solid fa-wallet text-xl"></i>
+            <span class="text-[9px] font-black" data-i18n="payments">Payments</span>
+            <span class="nav-dot"></span>
+        </button>
+        <button onclick="switchView('view-settings')" class="navbar-item flex flex-col items-center gap-1 flex-1 text-center transition-colors">
+            <i class="fa-solid fa-gear text-xl"></i>
+            <span class="text-[9px] font-black" data-i18n="settings">Settings</span>
+            <span class="nav-dot"></span>
+        </button>
+    </nav>
+</div>
+
+<!-- ════════════════════════════════════════
+     ADD ROOM
+════════════════════════════════════════ -->
+<div id="view-add-room" class="view-section flex flex-col" style="background:#FFFBF5">
+    <header class="text-white px-6 py-6 flex items-center justify-between relative z-10" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">
+        <div><h2 class="text-2xl font-black">Property जोड़ें</h2><p class="text-orange-100 text-xs mt-0.5">New room add करें</p></div>
+        <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </header>
+    <div class="px-6 pb-12 pt-8 overflow-y-auto flex-1">
+        <form id="add-room-form" class="space-y-5 fade-in-delay" onsubmit="handleAddRoomSubmit(event)">
+            <div>
+                <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Room / Flat Number</label>
+                <input type="text" id="new-room-no" required class="auth-input w-full px-5 py-4" placeholder="जैसे: 101, A-3">
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Monthly Rent (₹)</label>
+                <input type="number" id="new-rent-amount" required class="auth-input w-full px-5 py-4" placeholder="5000">
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Maintenance (Optional)</label>
+                <input type="number" id="new-maintenance" class="auth-input w-full px-5 py-4" placeholder="500">
+            </div>
+            <button id="add-room-btn" type="submit" class="w-full py-4 text-white font-black rounded-2xl mt-4 btn-premium text-lg flex justify-center items-center gap-2"
+                    style="background:linear-gradient(135deg,#FF6600,#F59E0B);box-shadow:0 8px 28px rgba(255,102,0,.3)">
+                <i class="fa-solid fa-check"></i> Property Save करें
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ANALYTICS
+════════════════════════════════════════ -->
+<div id="view-analytics" class="view-section flex flex-col bg-white overflow-hidden">
+    <header class="text-white px-6 py-6 flex items-center justify-between relative z-10" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)">
+        <h2 class="text-2xl font-black">Analytics 📊</h2>
+        <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto px-6 py-6 pb-20">
+        <div class="chart-container mb-6"><p class="text-sm font-bold text-gray-600 mb-3">Revenue Trend</p><canvas id="revenueChart"></canvas></div>
+        <div class="chart-container"><p class="text-sm font-bold text-gray-600 mb-3">Occupancy Rate</p><canvas id="occupancyChart"></canvas></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     EXPENSES
+════════════════════════════════════════ -->
+<div id="view-expenses" class="view-section flex flex-col bg-white overflow-hidden">
+    <header class="text-white px-6 py-6 flex items-center justify-between relative z-10" style="background:linear-gradient(135deg,#E11D48,#BE123C)">
+        <h2 class="text-2xl font-black">Expenses 💸</h2>
+        <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto px-6 py-6 pb-20">
+        <button onclick="addExpense()" class="w-full py-3.5 font-bold rounded-2xl mb-6 btn-premium flex items-center justify-center gap-2" style="background:#FFF1F2;color:#E11D48;border:1.5px solid #FECDD3">
+            <i class="fa-solid fa-plus"></i> Expense जोड़ें
+        </button>
+        <div id="expenses-list" class="space-y-3">
+            <div class="empty-state"><div class="empty-icon">🧾</div><p class="font-medium text-gray-500">कोई expense नहीं</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     REPORTS
+════════════════════════════════════════ -->
+<div id="view-reports" class="view-section flex flex-col bg-white overflow-hidden">
+    <header class="text-white px-6 py-6 flex items-center justify-between relative z-10" style="background:linear-gradient(135deg,#059669,#047857)">
+        <h2 class="text-2xl font-black">Reports 📄</h2>
+        <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto px-6 py-6 pb-20 space-y-3">
+        <button onclick="exportMonthlyReport()" class="w-full py-3.5 font-bold rounded-2xl btn-premium flex items-center justify-center gap-2" style="background:#F0FDF4;color:#059669;border:1.5px solid #A7F3D0">
+            <i class="fa-solid fa-download"></i> Monthly Report Export
+        </button>
+        <button onclick="exportPaymentHistory()" class="w-full py-3.5 font-bold rounded-2xl btn-premium flex items-center justify-center gap-2" style="background:#EFF6FF;color:#2563EB;border:1.5px solid #BFDBFE">
+            <i class="fa-solid fa-file-csv"></i> Payment History CSV
+        </button>
+        <div id="reports-content"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TENANTS
+════════════════════════════════════════ -->
+<div id="view-tenants" class="view-section flex flex-col bg-white overflow-hidden">
+    <header class="text-white px-6 py-6 flex items-center justify-between relative z-10" style="background:linear-gradient(135deg,#2D1B69,#4C1D95)">
+        <h2 class="text-2xl font-black">Tenants 👥</h2>
+        <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto px-5 py-5 pb-20">
+        <div id="tenants-list" class="space-y-3">
+            <div class="empty-state"><div class="empty-icon">👥</div><p class="font-medium text-gray-500">अभी कोई tenant नहीं</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAYMENTS
+════════════════════════════════════════ -->
+<div id="view-payments" class="view-section flex flex-col bg-white overflow-hidden">
+    <header class="text-white px-6 py-6 flex items-center justify-between relative z-10" style="background:linear-gradient(135deg,#059669,#047857)">
+        <h2 class="text-2xl font-black">Payments 💰</h2>
+        <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto px-5 py-5 pb-20">
+        <div class="flex gap-2 mb-5 overflow-x-auto pb-1" style="scrollbar-width:none">
+            <button onclick="filterPayments('all')" class="filter-btn px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap transition-all" style="background:#F3E8D0;color:var(--indigo)" data-filter="all">सभी</button>
+            <button onclick="filterPayments('pending')" class="filter-btn px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap transition-all" style="background:#FFF7ED;color:var(--saffron)" data-filter="pending">⏳ Pending</button>
+            <button onclick="filterPayments('paid')" class="filter-btn px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap transition-all" style="background:#F0FDF4;color:#059669" data-filter="paid">✓ Paid</button>
+        </div>
+        <div id="payments-list" class="space-y-3">
+            <div class="empty-state"><div class="empty-icon">💳</div><p class="font-medium text-gray-500">कोई payment नहीं</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SETTINGS
+════════════════════════════════════════ -->
+<div id="view-settings" class="view-section flex flex-col overflow-hidden" style="background:#FFFBF5">
+    <header class="text-white px-6 py-8 relative z-10 overflow-hidden" style="background:linear-gradient(135deg,#2D1B69,#4C1D95,#6D28D9)">
+        <div class="absolute top-0 right-0 w-44 h-44 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h2 class="text-2xl font-black" data-i18n="settings">Settings</h2>
+                <p class="text-white/50 text-sm mt-0.5 font-medium" id="settings-owner-email"></p>
+            </div>
+            <button onclick="switchView('view-owner')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black shadow-lg flex-shrink-0" id="settings-avatar" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">A</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-white font-black text-lg leading-tight truncate" id="settings-owner-name">Owner</p>
+                <p class="text-white/55 text-xs font-medium mt-0.5 truncate" id="settings-owner-address">—</p>
+            </div>
+            <button onclick="openEditProfileModal()" class="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-all flex-shrink-0">
+                <i class="fa-solid fa-pencil text-sm text-white"></i>
+            </button>
+        </div>
+    </header>
+    <div class="flex-1 overflow-y-auto px-5 py-5 pb-20 space-y-5">
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Account</p>
+            <div class="space-y-2">
+                <button onclick="openEditProfileModal()" class="settings-row w-full">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#FF6600,#F59E0B)"><i class="fa-solid fa-user-pen text-white text-sm"></i></div>
+                        <span class="font-bold text-gray-700" data-i18n="editProfile">Edit Profile</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3" data-i18n="preferences">Preferences</p>
+            <div class="space-y-2">
+                <div class="settings-row">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#7C3AED,#6D28D9)"><i class="fa-solid fa-language text-white text-sm"></i></div>
+                        <div>
+                            <span class="font-bold text-gray-700 block leading-tight" data-i18n="language">Language</span>
+                            <span id="lang-current-label" class="text-xs text-gray-500 font-medium">English</span>
+                        </div>
+                    </div>
+                    <div class="lang-toggle-track" id="lang-toggle-track" onclick="toggleLanguage()">
+                        <div class="lang-toggle-thumb" id="lang-toggle-thumb">EN</div>
+                    </div>
+                </div>
+                <button onclick="toggleDarkMode()" class="settings-row w-full">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-200"><i class="fa-solid fa-moon text-gray-600 text-sm"></i></div>
+                        <span class="font-bold text-gray-700" data-i18n="darkMode">Dark Mode</span>
+                    </div>
+                    <i class="fa-solid fa-toggle-off text-2xl text-gray-400"></i>
+                </button>
+                <button onclick="showNotifications()" class="settings-row w-full">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#FEF3C7"><i class="fa-solid fa-bell text-sm" style="color:var(--gold2)"></i></div>
+                        <span class="font-bold text-gray-700" data-i18n="notifications">Notifications</span>
+                    </div>
+                    <i class="fa-solid fa-toggle-on text-2xl" style="color:var(--saffron)"></i>
+                </button>
+            </div>
+        </div>
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3" data-i18n="data">Data</p>
+            <div class="space-y-2">
+                <button onclick="backupData()" class="settings-row w-full">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#F0FDF4"><i class="fa-solid fa-cloud-arrow-down text-sm" style="color:#059669"></i></div>
+                        <span class="font-bold text-gray-700" data-i18n="backupData">Backup Data</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <div class="pt-2 border-t border-orange-100">
+            <button onclick="confirmLogout()" class="settings-row w-full" style="background:#FFF1F2;border-color:#FECDD3">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#FEE2E2"><i class="fa-solid fa-sign-out text-sm" style="color:#E11D48"></i></div>
+                    <span class="font-bold" style="color:#E11D48" data-i18n="logout">Logout</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-sm" style="color:#FDA4AF"></i>
+            </button>
+        </div>
+        <p class="text-center text-gray-300 text-xs font-medium">Room Khata Pro · v2.0 🏠</p>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TENANT JOIN
+════════════════════════════════════════ -->
+<div id="view-tenant-join" class="view-section flex flex-col justify-center" style="background:linear-gradient(160deg,#FFFBF5 0%,#FEF3C7 60%,#FFFBF5 100%)">
+    <div class="px-6 py-12 text-center">
+        <div class="w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl float-bubble"
+             style="background:linear-gradient(135deg,#22C55E,#16A34A);box-shadow:0 20px 50px rgba(34,197,94,.4)">
+            <i class="fa-solid fa-key text-6xl text-white"></i>
+        </div>
+        <h1 class="text-4xl font-black mb-3" style="color:var(--indigo)">स्वागत है! 🏠</h1>
+        <p class="font-medium text-lg mb-8" style="color:#6B7280">आपके मकान मालिक ने invite किया है</p>
+        <div class="rounded-3xl p-6 mb-8" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:2px solid #A7F3D0">
+            <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style="color:#6B7280">Property Details</p>
+            <p class="text-3xl font-black stat-number" id="magic-room-display" style="color:var(--indigo)">Loading...</p>
+        </div>
+        <form id="magic-join-form" class="space-y-4 text-left fade-in-delay" onsubmit="handleMagicJoinSubmit(event)">
+            <div>
+                <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">आपका पूरा नाम</label>
+                <input type="text" id="magic-tenant-name" required class="auth-input w-full px-5 py-4">
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">WhatsApp Number</label>
+                <input type="tel" id="magic-tenant-phone" required class="auth-input w-full px-5 py-4" placeholder="10-digit number">
+            </div>
+            <button id="join-room-btn" type="submit" class="w-full py-4 text-white font-black rounded-2xl shadow-lg text-lg btn-premium flex justify-center items-center gap-2 mt-2"
+                    style="background:linear-gradient(135deg,#22C55E,#16A34A);box-shadow:0 8px 28px rgba(34,197,94,.35)">
+                <i class="fa-solid fa-check"></i> Join करें
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TOASTS
+════════════════════════════════════════ -->
+<div id="toast-container" class="fixed top-8 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none space-y-3 px-4"></div>
+
+<!-- ════════════════════════════════════════
+     CONFIRM MODAL
+════════════════════════════════════════ -->
+<div id="custom-confirm-modal" class="fixed inset-0 z-[90] hidden flex justify-center items-center px-4">
+    <div class="blur-background"></div>
+    <div id="custom-confirm-box" class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl modal-content relative z-10 text-center" style="border:1.5px solid #F3E8D0">
+        <div id="confirm-icon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl"></div>
+        <h3 id="confirm-title" class="text-2xl font-black mb-3" style="color:var(--indigo)">Title</h3>
+        <p id="confirm-message" class="text-gray-600 mb-8 font-medium text-sm">Message</p>
+        <div class="flex gap-3">
+            <button id="confirm-cancel-btn" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button id="confirm-ok-btn" class="flex-1 py-3 text-white font-bold rounded-2xl active:scale-95 transition-all shadow-md">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PROMPT MODAL
+════════════════════════════════════════ -->
+<div id="custom-prompt-modal" class="fixed inset-0 z-[90] hidden flex justify-center items-center px-4">
+    <div class="blur-background"></div>
+    <div id="custom-prompt-box" class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl modal-content relative z-10" style="border:1.5px solid #F3E8D0">
+        <h3 id="prompt-title" class="text-2xl font-black mb-4" style="color:var(--indigo)">Title</h3>
+        <input type="text" id="prompt-input" class="modal-input w-full px-4 py-3.5 mb-6" placeholder="यहाँ लिखें...">
+        <div class="flex gap-3">
+            <button id="prompt-cancel-btn" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button id="prompt-ok-btn" class="flex-1 py-3 text-white font-bold rounded-2xl active:scale-95 transition-all shadow-md btn-premium"
+                    style="background:linear-gradient(135deg,#FF6600,#F59E0B)">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SHARE MODAL
+════════════════════════════════════════ -->
+<div id="share-modal" class="fixed inset-0 z-[90] hidden flex flex-col justify-end">
+    <div class="blur-background" onclick="closeShareModal()"></div>
+    <div id="share-sheet" class="bg-white rounded-t-3xl p-6 pt-4 shadow-2xl modal-content relative z-10 translate-y-full" style="border-top:1.5px solid #F3E8D0">
+        <div class="w-12 h-1 rounded-full mx-auto mb-6" style="background:#FED7AA"></div>
+        <h3 class="text-2xl font-black mb-1" id="share-title" style="color:var(--indigo)">Tenant Invite करें</h3>
+        <p class="font-medium mb-4" style="color:#6B7280">Connection Code share करें</p>
+
+        <!-- Code display block — shown when shareRoomLink() fires -->
+        <div id="share-code-block" class="hidden rounded-2xl px-5 py-4 mb-5 flex items-center justify-between gap-4"
+             style="background:linear-gradient(135deg,#FFF7ED,#FEF3C7);border:2px dashed #FB923C">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest mb-1" style="color:#92400E">Tenant Connection Code</p>
+                <p id="share-code-display" class="font-mono font-black text-2xl tracking-widest" style="color:var(--saffron)">RK-XXXXXX</p>
+            </div>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('share-code-display').textContent).then(()=>showToast('Code copied!','success'))"
+                    class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 active:scale-90 transition-all"
+                    style="background:rgba(255,102,0,.12)">
+                <i class="fa-regular fa-copy" style="color:var(--saffron)"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <button onclick="shareViaWhatsAppAction()" class="flex flex-col items-center justify-center p-6 rounded-2xl btn-premium active:scale-95" style="background:#F0FDF4;border:1.5px solid #A7F3D0">
+                <i class="fa-brands fa-whatsapp text-5xl text-green-600 mb-3"></i>
+                <span class="text-sm font-bold text-green-700">WhatsApp</span>
+            </button>
+            <button onclick="copyShareLinkAction()" class="flex flex-col items-center justify-center p-6 rounded-2xl btn-premium active:scale-95" style="background:#EFF6FF;border:1.5px solid #BFDBFE">
+                <i class="fa-solid fa-copy text-5xl text-blue-600 mb-3"></i>
+                <span class="text-sm font-bold text-blue-700">Copy Code</span>
+            </button>
+        </div>
+        <button onclick="closeShareModal()" class="w-full py-3 rounded-2xl font-bold active:scale-95 transition-all" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     RECEIPT MODAL
+════════════════════════════════════════ -->
+<div id="receipt-modal" class="fixed inset-0 z-[95] hidden flex justify-center items-center px-4 backdrop-blur-sm">
+    <div class="blur-background" onclick="closeReceiptModal()"></div>
+    <div id="receipt-container" class="bg-white w-full max-w-md rounded-3xl shadow-2xl modal-content relative z-10 overflow-hidden">
+        <div class="text-white px-6 py-8 relative overflow-hidden" style="background:linear-gradient(135deg,#059669,#047857)">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10">
+                <p class="text-sm font-bold uppercase tracking-widest text-emerald-100 mb-2">Payment Receipt</p>
+                <h3 class="text-3xl font-black mb-1">✓ Paid</h3>
+                <p class="text-emerald-100 text-sm font-medium">Amount Received</p>
+            </div>
+        </div>
+        <div class="px-6 py-8">
+            <div class="text-center mb-8">
+                <p class="text-gray-500 text-sm font-medium mb-2">Rent Amount</p>
+                <p class="text-5xl font-black stat-number" style="color:var(--indigo)" id="receipt-amount">₹0</p>
+                <p class="text-xs text-gray-400 mt-2">for <span id="receipt-month-year">January 2024</span></p>
+            </div>
+            <div class="space-y-4 border-t border-b border-gray-100 py-6 mb-6">
+                <div class="flex justify-between"><span class="text-gray-600 font-medium">Building</span><span class="font-bold text-right" style="color:var(--indigo)" id="receipt-building">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-600 font-medium">Room No.</span><span class="font-bold" style="color:var(--indigo)" id="receipt-room">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-600 font-medium">Tenant</span><span class="font-bold text-right" style="color:var(--indigo)" id="receipt-tenant">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-600 font-medium">Date</span><span class="font-bold" style="color:var(--indigo)" id="receipt-date">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-600 font-medium">Receipt No.</span><span class="font-bold text-sm" style="color:var(--indigo)" id="receipt-number">-</span></div>
+            </div>
+            <p class="text-center text-gray-600 text-sm mb-6 font-medium">धन्यवाद! Thank you! 🙏</p>
+            <div class="space-y-3">
+                <button onclick="shareReceiptWhatsApp()" class="w-full py-4 text-white font-black rounded-2xl btn-premium text-lg flex items-center justify-center gap-3"
+                        style="background:linear-gradient(135deg,#22C55E,#16A34A);box-shadow:0 8px 28px rgba(34,197,94,.3)">
+                    <i class="fa-brands fa-whatsapp text-xl"></i> Receipt Share करें
+                </button>
+                <button onclick="downloadReceipt()" class="w-full py-3 rounded-2xl font-bold btn-premium flex items-center justify-center gap-2" style="background:#F0FDF4;color:#059669">
+                    <i class="fa-solid fa-download text-sm"></i> Download
+                </button>
+                <button onclick="closeReceiptModal()" class="w-full py-3 font-bold text-gray-500 hover:text-gray-900 transition-all">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TENANT DASHBOARD
+════════════════════════════════════════ -->
+<div id="view-tenant-dashboard" class="view-section flex flex-col overflow-hidden">
+    <div class="tenant-hero text-white px-5 pt-12 pb-6 relative z-10 shrink-0">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex flex-col">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center border border-white/15 shadow-sm">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 10L12 3l9 7"/><path d="M5 10v11a2 2 0 002 2h10a2 2 0 002-2V10"/>
+                            <rect x="8" y="10" width="8" height="10" rx="1"/><path d="M10 13h4"/><path d="M10 16h4"/>
+                        </svg>
+                    </div>
+                    <span class="font-black text-sm">Room<span style="color:#FDA4AF">Khata</span></span>
+                </div>
+                <p class="text-white/40 text-[7px] font-bold tracking-[.2em] leading-none mt-1 ml-9">RENT. TRACK. RELAX.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="live-dot"></div>
+                <span class="text-[10px] text-white/55 font-bold">LIVE</span>
+                <button onclick="confirmLogout()" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center border border-white/20 ml-2 active:scale-90 transition-all">
+                    <i class="fa-solid fa-sign-out text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <div class="mb-5">
+            <p class="text-white/55 text-[10px] font-bold uppercase tracking-widest mb-1" data-i18n="welcomeBack">Welcome back,</p>
+            <h2 id="td-tenant-name" class="text-3xl font-black tracking-tight">Loading...</h2>
+            <p class="text-white/45 text-sm mt-1 font-medium">
+                <span data-i18n="room">Room</span> <span id="td-room-no" class="text-white/75 font-black ml-1">--</span>
+            </p>
+        </div>
+        <div class="due-card rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-white/55 text-[10px] font-bold uppercase tracking-widest" data-i18n="amountDue">Total Due This Month</p>
+                <span id="td-status-badge" class="text-[10px] font-black px-2.5 py-1 rounded-lg" style="background:rgba(255,102,0,.25);color:#FED7AA">PENDING</span>
+            </div>
+            <p id="td-amount-due" class="text-5xl font-black tracking-tight text-white stat-number amount-due-pulse">₹0</p>
+            <div class="mt-3 flex items-center gap-5 flex-wrap">
+                <div>
+                    <p class="text-white/35 text-[9px] font-bold uppercase">Base Rent</p>
+                    <p id="td-base-rent" class="text-white/75 text-sm font-bold stat-number">₹0</p>
+                </div>
+                <div id="td-elec-block" class="hidden">
+                    <p class="text-white/35 text-[9px] font-bold uppercase">+ Electricity</p>
+                    <p id="td-elec-amount" class="text-yellow-300 text-sm font-bold stat-number">₹0</p>
+                </div>
+                <div id="td-balance-block" class="hidden ml-auto">
+                    <p class="text-white/35 text-[9px] font-bold uppercase">Balance Due</p>
+                    <p id="td-balance" class="text-red-300 text-sm font-bold stat-number">₹0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="openUpiModal()" class="flex flex-col items-center justify-center py-6 rounded-2xl shadow-lg active:scale-95 transition-all btn-premium"
+                    style="background:linear-gradient(135deg,#2563EB,#1D4ED8);box-shadow:0 8px 24px rgba(37,99,235,.35)">
+                <i class="fa-solid fa-qrcode text-2xl text-white mb-2"></i>
+                <span class="text-sm font-black text-white" data-i18n="payRent">Pay Rent</span>
+                <span class="text-[9px] text-blue-200 mt-0.5" data-i18n="upiQr">UPI / QR Code</span>
+            </button>
+            <button onclick="openComplaintModal()" class="flex flex-col items-center justify-center py-6 rounded-2xl shadow-lg active:scale-95 transition-all btn-premium"
+                    style="background:linear-gradient(135deg,#FF6600,#DC2626);box-shadow:0 8px 24px rgba(255,102,0,.35)">
+                <i class="fa-solid fa-triangle-exclamation text-2xl text-white mb-2"></i>
+                <span class="text-sm font-black text-white" data-i18n="raiseComplaint">Raise Complaint</span>
+                <span class="text-[9px] text-orange-200 mt-0.5" data-i18n="reportIssue">Report an issue</span>
+            </button>
+        </div>
+
+        <div class="tenant-card rounded-2xl p-5">
+            <h3 class="text-white/45 text-[10px] font-black uppercase tracking-widest mb-4" data-i18n="tenancyDetails">Your Tenancy Details</h3>
+            <div class="space-y-3" id="td-details">
+                <div class="flex justify-between items-center">
+                    <span class="text-white/45 text-sm font-medium" data-i18n="moveInDate">Move-in Date</span>
+                    <span id="td-movein" class="text-white/75 text-sm font-bold">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-white/45 text-sm font-medium" data-i18n="securityDeposit">Security Deposit</span>
+                    <span id="td-deposit" class="text-green-400 text-sm font-bold stat-number">₹0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-white/45 text-sm font-medium" data-i18n="building">Building</span>
+                    <span id="td-building" class="text-white/75 text-sm font-bold text-right max-w-[60%]">—</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tenant-card rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-white/45 text-[10px] font-black uppercase tracking-widest" data-i18n="paymentHistory">Payment History</h3>
+                <span id="td-history-count" class="text-[10px] font-bold px-2 py-0.5 rounded-lg" style="background:rgba(37,99,235,.25);color:#93C5FD">0 records</span>
+            </div>
+            <div id="td-payment-history" class="space-y-3">
+                <div class="text-center py-6" style="color:rgba(255,255,255,.25)">
+                    <i class="fa-solid fa-clock-rotate-left text-3xl mb-2 block"></i>
+                    <p class="text-sm">No payment history yet</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="td-complaints-section" class="tenant-card rounded-2xl p-5 hidden">
+            <h3 class="text-white/45 text-[10px] font-black uppercase tracking-widest mb-4" data-i18n="openComplaints">Open Complaints</h3>
+            <div id="td-complaints-list" class="space-y-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     UPI MODAL
+════════════════════════════════════════ -->
+<div id="upi-modal" class="fixed inset-0 z-[95] hidden flex flex-col justify-end">
+    <div class="blur-background" onclick="closeUpiModal()"></div>
+    <div class="rounded-t-3xl p-6 pt-5 shadow-2xl modal-content relative z-10" style="background:linear-gradient(160deg,#1E1B4B 0%,#312E81 100%);border-top:1.5px solid rgba(255,255,255,.1)">
+        <div class="w-12 h-1 rounded-full mx-auto mb-5" style="background:rgba(255,255,255,.2)"></div>
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-xl font-black text-white" data-i18n="payRent">Pay Rent</h3>
+            <span id="upi-amount-display" class="text-xl font-black stat-number" style="color:#4ADE80">₹0</span>
+        </div>
+        <div class="upi-qr mb-5">
+            <div class="text-center">
+                <div class="w-44 h-44 mx-auto mb-3 bg-gray-50 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner">
+                    <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="160" height="160" fill="white"/>
+                        <rect x="10" y="10" width="50" height="50" rx="4" fill="#1E1B4B"/><rect x="16" y="16" width="38" height="38" rx="2" fill="white"/><rect x="22" y="22" width="26" height="26" rx="1" fill="#1E1B4B"/>
+                        <rect x="100" y="10" width="50" height="50" rx="4" fill="#1E1B4B"/><rect x="106" y="16" width="38" height="38" rx="2" fill="white"/><rect x="112" y="22" width="26" height="26" rx="1" fill="#1E1B4B"/>
+                        <rect x="10" y="100" width="50" height="50" rx="4" fill="#1E1B4B"/><rect x="16" y="106" width="38" height="38" rx="2" fill="white"/><rect x="22" y="112" width="26" height="26" rx="1" fill="#1E1B4B"/>
+                        <rect x="70" y="10" width="8" height="8" fill="#1E1B4B"/><rect x="82" y="10" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="70" y="22" width="8" height="8" fill="#1E1B4B"/><rect x="82" y="34" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="70" y="46" width="8" height="8" fill="#1E1B4B"/><rect x="70" y="70" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="82" y="70" width="8" height="8" fill="#1E1B4B"/><rect x="70" y="82" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="82" y="82" width="8" height="8" fill="#1E1B4B"/><rect x="100" y="70" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="112" y="70" width="8" height="8" fill="#1E1B4B"/><rect x="124" y="70" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="136" y="70" width="8" height="8" fill="#1E1B4B"/><rect x="100" y="82" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="124" y="82" width="8" height="8" fill="#1E1B4B"/><rect x="100" y="94" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="112" y="94" width="8" height="8" fill="#1E1B4B"/><rect x="136" y="94" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="70" y="100" width="8" height="8" fill="#1E1B4B"/><rect x="82" y="100" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="70" y="112" width="8" height="8" fill="#1E1B4B"/><rect x="82" y="124" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="70" y="136" width="8" height="8" fill="#1E1B4B"/><rect x="100" y="112" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="124" y="112" width="8" height="8" fill="#1E1B4B"/><rect x="112" y="124" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="136" y="124" width="8" height="8" fill="#1E1B4B"/><rect x="100" y="136" width="8" height="8" fill="#1E1B4B"/>
+                        <rect x="136" y="136" width="8" height="8" fill="#1E1B4B"/>
+                        <text x="80" y="158" text-anchor="middle" font-size="6" fill="#999" font-family="monospace">SCAN TO PAY</text>
+                    </svg>
+                </div>
+                <p class="text-gray-500 text-xs font-bold" data-i18n="scanWithUpi">Scan with any UPI app</p>
+                <p id="upi-id-display" class="font-black text-sm mt-1" style="color:white">owner@upi</p>
+            </div>
+        </div>
+        <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest text-center mb-3" data-i18n="orPayWith">Or pay with</p>
+        <div class="upi-grid mb-5">
+            <button onclick="openUpiApp('gpay')" class="upi-app-btn"><span class="text-2xl mb-1">🅖</span><span class="text-white text-xs font-bold">GPay</span></button>
+            <button onclick="openUpiApp('phonepe')" class="upi-app-btn"><span class="text-2xl mb-1">📱</span><span class="text-white text-xs font-bold">PhonePe</span></button>
+            <button onclick="openUpiApp('paytm')" class="upi-app-btn"><span class="text-2xl mb-1">💳</span><span class="text-white text-xs font-bold">Paytm</span></button>
+        </div>
+        <div class="rounded-2xl p-3 mb-4" style="background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.2)">
+            <p class="text-blue-300 text-xs font-medium text-center"><i class="fa-solid fa-circle-info mr-1"></i><span data-i18n="afterPaymentNote">After payment, your landlord will confirm & update your status.</span></p>
+        </div>
+        <button onclick="closeUpiModal()" class="w-full py-3.5 font-bold rounded-2xl transition-all active:scale-95" style="background:rgba(255,255,255,.1);color:white" data-i18n="done">Done</button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     COMPLAINT MODAL
+════════════════════════════════════════ -->
+<div id="complaint-modal" class="fixed inset-0 z-[95] hidden flex flex-col justify-end">
+    <div class="blur-background" onclick="closeComplaintModal()"></div>
+    <div class="rounded-t-3xl p-6 pt-5 shadow-2xl modal-content relative z-10 max-h-[85vh] overflow-y-auto" style="background:#111827;border:1px solid rgba(255,255,255,.08)">
+        <div class="w-12 h-1 rounded-full mx-auto mb-5" style="background:rgba(255,255,255,.2)"></div>
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:linear-gradient(135deg,#FF6600,#DC2626)">
+                <i class="fa-solid fa-triangle-exclamation text-xl text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-white" data-i18n="raiseComplaint">Raise Complaint</h3>
+                <p class="text-white/40 text-xs" data-i18n="landlordNotified">Your landlord will be notified</p>
+            </div>
+        </div>
+        <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-3" data-i18n="typeOfIssue">Type of Issue</p>
+        <div class="grid grid-cols-3 gap-2 mb-5" id="complaint-type-grid">
+            <button onclick="selectComplaintType(this,'plumbing')" class="complaint-type-btn border rounded-xl py-3 text-center" style="border-color:rgba(255,255,255,.12)"><span class="text-xl block mb-1">🔧</span><span class="text-white/60 text-xs font-bold">Plumbing</span></button>
+            <button onclick="selectComplaintType(this,'electrical')" class="complaint-type-btn border rounded-xl py-3 text-center" style="border-color:rgba(255,255,255,.12)"><span class="text-xl block mb-1">⚡</span><span class="text-white/60 text-xs font-bold">Electrical</span></button>
+            <button onclick="selectComplaintType(this,'cleaning')" class="complaint-type-btn border rounded-xl py-3 text-center" style="border-color:rgba(255,255,255,.12)"><span class="text-xl block mb-1">🧹</span><span class="text-white/60 text-xs font-bold">Cleaning</span></button>
+            <button onclick="selectComplaintType(this,'security')" class="complaint-type-btn border rounded-xl py-3 text-center" style="border-color:rgba(255,255,255,.12)"><span class="text-xl block mb-1">🔒</span><span class="text-white/60 text-xs font-bold">Security</span></button>
+            <button onclick="selectComplaintType(this,'noise')" class="complaint-type-btn border rounded-xl py-3 text-center" style="border-color:rgba(255,255,255,.12)"><span class="text-xl block mb-1">🔊</span><span class="text-white/60 text-xs font-bold">Noise</span></button>
+            <button onclick="selectComplaintType(this,'other')" class="complaint-type-btn border rounded-xl py-3 text-center" style="border-color:rgba(255,255,255,.12)"><span class="text-xl block mb-1">📋</span><span class="text-white/60 text-xs font-bold">Other</span></button>
+        </div>
+        <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-2" data-i18n="describeIssue">Describe the Issue</p>
+        <textarea id="complaint-desc" rows="4" class="w-full px-4 py-3 rounded-xl outline-none font-medium transition-all resize-none mb-2 text-sm placeholder-gray-600"
+                  style="background:#1F2937;border:2px solid rgba(255,255,255,.08);color:white" placeholder="Issue detail में बताएं..."></textarea>
+        <p id="complaint-char-count" class="text-right text-gray-600 text-xs mb-4">0 / 300</p>
+        <p class="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-2" data-i18n="priority">Priority</p>
+        <div class="flex gap-2 mb-5">
+            <button onclick="selectPriority(this,'low')" class="priority-btn flex-1 py-2 border rounded-lg text-xs font-bold transition-all" style="border-color:rgba(255,255,255,.12);color:#9CA3AF" data-i18n="low">Low</button>
+            <button onclick="selectPriority(this,'medium')" class="priority-btn flex-1 py-2 border rounded-lg text-xs font-bold transition-all" style="border-color:rgba(255,255,255,.12);color:#9CA3AF" data-i18n="medium">Medium</button>
+            <button onclick="selectPriority(this,'high')" class="priority-btn flex-1 py-2 border rounded-lg text-xs font-bold transition-all" style="border-color:rgba(255,255,255,.12);color:#9CA3AF"><span data-i18n="high">High</span> 🚨</button>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closeComplaintModal()" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#1F2937;color:#9CA3AF" data-i18n="cancel">Cancel</button>
+            <button onclick="submitComplaint()" class="flex-1 py-3 text-white font-black rounded-2xl active:scale-95 transition-all shadow-md btn-premium" style="background:linear-gradient(135deg,#FF6600,#DC2626)" data-i18n="submit">Submit</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     EDIT PROFILE MODAL
+════════════════════════════════════════ -->
+<div id="edit-profile-modal" class="fixed inset-0 z-[92] hidden flex flex-col justify-end">
+    <div class="blur-background" onclick="closeEditProfileModal()"></div>
+    <div class="bg-white rounded-t-3xl p-6 pt-5 shadow-2xl modal-content relative z-10 max-h-[85vh] overflow-y-auto" style="border-top:1.5px solid #F3E8D0">
+        <div class="w-12 h-1 rounded-full mx-auto mb-5" style="background:#FED7AA"></div>
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg flex-shrink-0" id="ep-avatar-preview" style="background:linear-gradient(135deg,#FF6600,#F59E0B)">A</div>
+            <div>
+                <h3 class="text-xl font-black" style="color:var(--indigo)">Profile Edit करें</h3>
+                <p class="text-gray-500 text-sm">आपकी owner account info</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Full Name</label>
+                <div class="relative"><i class="fa-solid fa-user absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <input type="text" id="ep-name" class="modal-input pl-11 pr-4 py-3.5 w-full" placeholder="आपका पूरा नाम"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Address</label>
+                <div class="relative"><i class="fa-solid fa-location-dot absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <textarea id="ep-address" rows="2" class="modal-input pl-11 pr-4 py-3.5 w-full resize-none" placeholder="123 Main Street, City"></textarea></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">UPI ID</label>
+                <div class="relative"><i class="fa-solid fa-qrcode absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <input type="text" id="ep-upi" class="modal-input pl-11 pr-4 py-3.5 w-full" placeholder="yourname@upi"></div>
+                <p class="text-xs text-gray-400 mt-1 font-medium">Tenants को Pay Rent screen पर दिखेगा</p>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeEditProfileModal()" class="flex-1 py-3.5 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="saveOwnerProfile()" id="ep-submit-btn" class="flex-1 py-3.5 text-white font-black rounded-2xl active:scale-95 transition-all shadow-md btn-premium"
+                    style="background:linear-gradient(135deg,#FF6600,#F59E0B);box-shadow:0 6px 20px rgba(255,102,0,.3)">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ADD BUILDING MODAL
+════════════════════════════════════════ -->
+<div id="add-building-modal" class="fixed inset-0 z-[92] hidden flex flex-col justify-end">
+    <div class="blur-background" onclick="closeAddBuildingModal()"></div>
+    <div class="bg-white rounded-t-3xl p-6 pt-5 shadow-2xl modal-content relative z-10" style="border-top:1.5px solid #F3E8D0">
+        <div class="w-12 h-1 rounded-full mx-auto mb-5" style="background:#FED7AA"></div>
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style="background:linear-gradient(135deg,#2D1B69,#6D28D9)">
+                <i class="fa-solid fa-building text-2xl text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black" style="color:var(--indigo)">New Building जोड़ें</h3>
+                <p class="text-gray-500 text-sm">नई property create करें</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Building Name *</label>
+                <div class="relative"><i class="fa-solid fa-building-user absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <input type="text" id="ab-name" class="modal-input pl-11 pr-4 py-3.5 w-full" placeholder="जैसे: Sunrise Apartments"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Number of Rooms *</label>
+                <div class="relative"><i class="fa-solid fa-door-open absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <input type="number" id="ab-rooms" min="1" max="100" class="modal-input pl-11 pr-4 py-3.5 w-full" placeholder="जैसे: 10"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Starting Room Number</label>
+                <div class="relative"><i class="fa-solid fa-hashtag absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <input type="text" id="ab-start" value="101" class="modal-input pl-11 pr-4 py-3.5 w-full" placeholder="101"></div>
+                <p class="text-xs text-gray-400 mt-1 font-medium">Rooms: 101, 102, 103...</p>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Default Monthly Rent (₹)</label>
+                <div class="relative"><i class="fa-solid fa-indian-rupee-sign absolute left-4 top-3.5 text-sm" style="color:var(--gold2)"></i>
+                    <input type="number" id="ab-rent" class="modal-input pl-11 pr-4 py-3.5 w-full" placeholder="जैसे: 5000"></div>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeAddBuildingModal()" class="flex-1 py-3.5 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="submitAddBuilding()" id="ab-submit-btn" class="flex-1 py-3.5 text-white font-black rounded-2xl active:scale-95 transition-all shadow-md btn-premium flex items-center justify-center gap-2"
+                    style="background:linear-gradient(135deg,#2D1B69,#6D28D9);box-shadow:0 6px 20px rgba(45,27,105,.3)">
+                <i class="fa-solid fa-plus text-sm"></i> Building बनाएं
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PARTIAL PAYMENT MODAL
+════════════════════════════════════════ -->
+<div id="partial-payment-modal" class="fixed inset-0 z-[92] hidden flex justify-center items-center px-4">
+    <div class="blur-background" onclick="closePartialPaymentModal()"></div>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl modal-content relative z-10" style="border:1.5px solid #A7F3D0">
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg" style="background:linear-gradient(135deg,#059669,#047857)">
+            <i class="fa-solid fa-indian-rupee-sign text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-black text-center mb-1" style="color:var(--indigo)">Payment Record करें</h3>
+        <p class="text-gray-500 text-sm text-center mb-6">Tenant से मिली amount दर्ज करें</p>
+        <div class="mb-4">
+            <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Total Rent Due</label>
+            <p id="pp-total-rent" class="text-3xl font-black stat-number" style="color:var(--saffron)">₹0</p>
+        </div>
+        <div class="mb-6">
+            <label class="block text-sm font-bold mb-2" style="color:var(--indigo)">Amount Received (₹)</label>
+            <input type="number" id="pp-amount-input" class="modal-input w-full px-4 py-3.5 text-base" placeholder="Amount enter करें" min="0">
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closePartialPaymentModal()" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="confirmPartialPayment()" class="flex-1 py-3 text-white font-black rounded-2xl active:scale-95 transition-all shadow-md btn-premium" style="background:linear-gradient(135deg,#059669,#047857)">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     KYC / ASSIGN MODAL
+════════════════════════════════════════ -->
+<div id="kyc-modal" class="fixed inset-0 z-[92] hidden flex justify-center items-center px-4">
+    <div class="blur-background" onclick="closeKycModal()"></div>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl modal-content relative z-10 max-h-[90vh] overflow-y-auto" style="border:1.5px solid #DDD6FE">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style="background:linear-gradient(135deg,#2D1B69,#6D28D9)">
+                <i class="fa-solid fa-id-card text-xl text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black" style="color:var(--indigo)">Tenant Assign करें</h3>
+                <p id="kyc-room-label" class="text-sm text-gray-500 font-medium">Room --</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Full Name *</label>
+                <input type="text" id="kyc-name" required class="modal-input w-full px-4 py-3" placeholder="Tenant का पूरा नाम"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">WhatsApp Number *</label>
+                <input type="tel" id="kyc-phone" required class="modal-input w-full px-4 py-3" placeholder="10-digit number"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Move-in Date *</label>
+                <input type="date" id="kyc-movein" required class="modal-input w-full px-4 py-3"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Security Deposit (₹)</label>
+                <input type="number" id="kyc-deposit" class="modal-input w-full px-4 py-3" placeholder="जैसे: 10000"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">ID Proof Info</label>
+                <input type="text" id="kyc-idproof" class="modal-input w-full px-4 py-3" placeholder="Aadhaar / PAN / Passport No."></div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeKycModal()" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="submitKyc()" class="flex-1 py-3 text-white font-black rounded-2xl active:scale-95 transition-all shadow-md btn-premium" style="background:linear-gradient(135deg,#2D1B69,#6D28D9)">Assign करें</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ELECTRICITY BILL MODAL
+════════════════════════════════════════ -->
+<div id="electricity-modal" class="fixed inset-0 z-[92] hidden flex justify-center items-center px-4">
+    <div class="blur-background" onclick="closeElectricityModal()"></div>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl modal-content relative z-10" style="border:1.5px solid #FDE68A">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style="background:linear-gradient(135deg,#F59E0B,#D97706)">
+                <i class="fa-solid fa-bolt text-xl text-white"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black" style="color:var(--indigo)">Electricity Bill</h3>
+                <p id="elec-room-label" class="text-sm text-gray-500 font-medium">Room --</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Previous Reading (Units)</label>
+                <input type="number" id="elec-prev" class="modal-input w-full px-4 py-3" placeholder="जैसे: 500"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Current Reading (Units)</label>
+                <input type="number" id="elec-curr" class="modal-input w-full px-4 py-3" placeholder="जैसे: 570"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Rate per Unit (₹)</label>
+                <input type="number" id="elec-rate" value="8" class="modal-input w-full px-4 py-3" placeholder="8"></div>
+            <div id="elec-preview" class="hidden rounded-2xl p-4 border-2 text-center" style="background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border-color:#FDE68A">
+                <p class="text-xs font-bold uppercase mb-1" style="color:#92400E">Bill Amount</p>
+                <p id="elec-calc-result" class="text-3xl font-black stat-number" style="color:var(--saffron)">₹0</p>
+                <p id="elec-calc-units" class="text-xs text-gray-500 mt-1">0 units consumed</p>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeElectricityModal()" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="calculateAndAddBill()" class="flex-1 py-3 text-white font-black rounded-2xl active:scale-95 transition-all shadow-md btn-premium" style="background:linear-gradient(135deg,#F59E0B,#D97706)">Rent में जोड़ें</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     EDIT ROOM MODAL
+════════════════════════════════════════ -->
+<div id="edit-room-modal" class="fixed inset-0 z-[92] hidden flex justify-center items-center px-4">
+    <div class="blur-background" onclick="closeEditRoomModal()"></div>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl modal-content relative z-10" style="border:1.5px solid #BFDBFE">
+        <h3 class="text-2xl font-black mb-6" style="color:var(--indigo)">Room Edit करें</h3>
+        <input type="hidden" id="edit-room-id">
+        <div class="space-y-4">
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Room Number</label>
+                <input type="text" id="edit-room-no" class="modal-input w-full px-4 py-3"></div>
+            <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Monthly Rent (₹)</label>
+                <input type="number" id="edit-room-rent" class="modal-input w-full px-4 py-3"></div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeEditRoomModal()" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="submitEditRoom()" class="flex-1 py-3 text-white font-bold rounded-2xl active:scale-95 transition-all shadow-md btn-premium" style="background:linear-gradient(135deg,#2563EB,#1D4ED8)">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     EDIT BUILDING MODAL
+════════════════════════════════════════ -->
+<div id="edit-building-modal" class="fixed inset-0 z-[92] hidden flex justify-center items-center px-4">
+    <div class="blur-background" onclick="closeEditBuildingModal()"></div>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl modal-content relative z-10" style="border:1.5px solid #DDD6FE">
+        <h3 class="text-2xl font-black mb-6" style="color:var(--indigo)">Building Rename करें</h3>
+        <input type="hidden" id="edit-building-id">
+        <div><label class="block text-xs font-bold mb-1.5 uppercase tracking-wider" style="color:var(--indigo)">Building Name</label>
+            <input type="text" id="edit-building-name" class="modal-input w-full px-4 py-3"></div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeEditBuildingModal()" class="flex-1 py-3 rounded-2xl font-bold transition-all active:scale-95" style="background:#F3E8D0;color:var(--indigo)">Cancel</button>
+            <button onclick="submitEditBuilding()" class="flex-1 py-3 text-white font-bold rounded-2xl active:scale-95 transition-all shadow-md btn-premium" style="background:linear-gradient(135deg,#2D1B69,#6D28D9)">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     EXIT APP MODAL  (Issue 3)
+════════════════════════════════════════ -->
+<div id="exit-app-modal" class="fixed inset-0 z-[999] hidden flex justify-center items-end sm:items-center px-4 pb-6 sm:pb-0">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 blur-background" onclick="hideExitModal()"></div>
+
+    <!-- Card -->
+    <div id="exit-modal-box"
+         class="relative z-10 w-full max-w-sm rounded-3xl p-7 shadow-2xl transition-all duration-250 ease-out scale-90 opacity-0"
+         style="background:linear-gradient(160deg,#FFFBF5 0%,#FEF3C7 100%);border:1.5px solid #FED7AA;box-shadow:0 32px 80px rgba(45,27,105,.22)">
+
+        <!-- Icon -->
+        <div class="flex justify-center mb-5">
+            <div class="w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl"
+                 style="background:linear-gradient(135deg,#2D1B69,#6D28D9)">
+                <i class="fa-solid fa-door-open text-4xl text-white"></i>
+            </div>
+        </div>
+
+        <!-- Text -->
+        <h3 class="text-2xl font-black text-center mb-2" style="color:var(--indigo)">App बंद करें?</h3>
+        <p class="text-sm text-center font-medium leading-relaxed mb-7" style="color:#6B7280">
+            क्या आप सच में <strong style="color:var(--indigo)">Room Khata Pro</strong> से बाहर जाना चाहते हैं?
+        </p>
+
+        <!-- Buttons -->
+        <div class="flex gap-3">
+            <!-- No / Stay -->
+            <button onclick="hideExitModal()"
+                    class="flex-1 py-4 rounded-2xl font-black text-base btn-premium active:scale-95 transition-all"
+                    style="background:linear-gradient(135deg,#FF6600,#F59E0B);color:white;box-shadow:0 8px 24px rgba(255,102,0,.35)">
+                <i class="fa-solid fa-house mr-2"></i>रुकें
+            </button>
+            <!-- Yes / Exit -->
+            <button onclick="confirmExitApp()"
+                    class="flex-1 py-4 rounded-2xl font-black text-base btn-premium active:scale-95 transition-all"
+                    style="background:linear-gradient(135deg,#2D1B69,#4C1D95);color:white;box-shadow:0 8px 24px rgba(45,27,105,.35)">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>बाहर जाएं
+            </button>
+        </div>
+    </div>
+</div>
+
+</div><!-- end app-container -->
+<script type="module" src="app.js"></script>
+</body>
+</html>
