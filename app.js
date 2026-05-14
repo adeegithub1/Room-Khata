@@ -1916,7 +1916,16 @@ window.handleTenantCodeLoginSubmit = async function(e) {
 };
 
 async function handleTenantCodeLogin(phone, code) {
-    // Step 1: Query Firestore for a room with matching connectionCode
+    // STEP 1: PEHLE AUTHENTICATE KARO (Taki DB read karne ki permission mile)
+    let tenantUid = null;
+    if (currentUser) {
+        tenantUid = currentUser.uid;
+    } else {
+        const cred = await signInAnonymously(auth);
+        tenantUid  = cred.user.uid;
+    }
+
+    // STEP 2: AB DATABASE MEIN ROOM CODE DHOONDHO
     const roomQuery = query(collection(db, "rooms"), where("connectionCode", "==", code));
     const roomSnap  = await getDocs(roomQuery);
 
@@ -1930,15 +1939,6 @@ async function handleTenantCodeLogin(phone, code) {
     const roomDoc  = roomSnap.docs[0];
     const roomId   = roomDoc.id;
     const roomData = roomDoc.data();
-
-    // Step 2: Anonymous Firebase Auth
-    let tenantUid = null;
-    if (currentUser) {
-        tenantUid = currentUser.uid;
-    } else {
-        const cred = await signInAnonymously(auth);
-        tenantUid  = cred.user.uid;
-    }
 
     // Step 3: Update the room with tenant's WhatsApp & UID
     await updateDoc(doc(db, "rooms", roomId), {
@@ -1956,7 +1956,6 @@ async function handleTenantCodeLogin(phone, code) {
 
     showToast(`🎉 स्वागत है! Room ${roomData.roomNo} join हो गया।`, "success");
 
-    // onAuthStateChanged will pick up the UID and route to tenant dashboard
     tenantRoomId = roomId;
     window.switchView('view-tenant-dashboard');
     subscribeToTenantRoom(roomId);
