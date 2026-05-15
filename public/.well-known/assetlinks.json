@@ -1,1 +1,10 @@
 
+
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.roomkhata.app",
+        "sha256_cert_fingerprints": ["50:50:8E:BE:E0:A4:43:16:A1:3B:B0:11:E0:30:73:BC:B4:8E:E0:5C:16:8F:54:1E:F6:58:F7:B6:C1:60:35:E1"]
+      }
+    }]
