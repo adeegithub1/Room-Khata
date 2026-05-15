@@ -1063,14 +1063,14 @@ export default function OwnerDashboardView() {
   }, [rooms, toast]);
 
   // ── Nav handler ────────────────────────────────────────────
+  // ── Nav handler ────────────────────────────────────────────
   const handleNav = useCallback(async (key) => {
     setActiveNav(key);
     if (key === "settings") {
-      await signOut(auth);
-      setUserRole(null);
-      navigate("/login");
+       // navigate("/settings"); // Abhi settings page banna baki hai
+       alert("⚙️ Settings page and Logout will be added here!");
     }
-  }, [navigate, setUserRole]);
+  }, [navigate]);
 
   // ── Filtered + grouped rooms ───────────────────────────────
   const filteredRooms = useMemo(() => {
