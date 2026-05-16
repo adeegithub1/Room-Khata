@@ -51,6 +51,9 @@ const V = {
   }
 };
 
+// ─────────────────────────────────────────────────────────────
+// MISSING COMPONENTS (JO MAINE GALTI SE UDA DIYE THE)
+// ─────────────────────────────────────────────────────────────
 function AnimatedNumber({ value, prefix = "₹" }) {
   const ref = useRef(null);
   const mv = useMotionValue(0);
@@ -86,6 +89,54 @@ function Toast({ toasts, dismiss }) {
   );
 }
 
+function SkeletonCard() {
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-3 space-y-2 shadow-sm">
+      <div className="w-9 h-9 rounded-xl bg-gray-100 animate-pulse mb-2" />
+      <div className="h-3 bg-gray-100 rounded animate-pulse w-3/4" />
+      <div className="h-2.5 bg-gray-100 rounded animate-pulse w-1/2" />
+      <div className="h-7 bg-gray-100 rounded-xl animate-pulse mt-2" />
+    </div>
+  );
+}
+
+function FilterChips({ active, onChange }) {
+  const chips = [
+    { key: "all", label: "All Rooms" },
+    { key: "pending", label: "⏳ Pending" },
+    { key: "paid", label: "✓ Paid" },
+  ];
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+      {chips.map((c) => {
+        const isActive = active === c.key;
+        return (
+          <button key={c.key} onClick={() => onChange(c.key)} className="px-4 py-2 rounded-xl font-bold whitespace-nowrap active:scale-95 transition-all text-xs" style={{ border: "none", cursor: "pointer", background: isActive ? "linear-gradient(135deg,#FF6600,#F59E0B)" : "white", color: isActive ? "white" : "#6B7280", boxShadow: isActive ? "0 4px 14px rgba(255,102,0,0.25)" : "0 1px 3px rgba(0,0,0,0.05)" }}>
+            {c.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function EmptyState({ hasFilter, onAddBuilding }) {
+  return (
+    <motion.div variants={V.scaleUp} initial="hidden" animate="visible" className="text-center py-16">
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4" style={{ background: "linear-gradient(135deg,#F4F6FB,#ECEEF4)" }}>
+        <i className={hasFilter ? "fa-solid fa-filter text-4xl" : "fa-regular fa-building text-4xl"} style={{ color: "#9CA3AF" }} />
+      </div>
+      <p className="font-black text-lg mb-1 text-gray-800">{hasFilter ? "No matching rooms" : "No buildings yet"}</p>
+      <p className="text-sm mb-4 text-gray-400">{hasFilter ? "Try changing the filter or search" : 'Tap "Add Building" to get started'}</p>
+      {!hasFilter && (
+        <button onClick={onAddBuilding} className="px-6 py-3 text-white rounded-xl font-black shadow-lg shadow-orange-500/30" style={{ background: "linear-gradient(135deg,#FF6600,#F59E0B)" }}>
+          + Add First Building
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // COMPACT RESPONSIVE HEADER WITH SCROLL ANIMATION
 // ─────────────────────────────────────────────────────────────
@@ -107,59 +158,37 @@ function FinanceHeader({ ownerName, rooms, loading, isScrolled, onBellClick, has
       }}
     >
       <div className="relative z-10 px-5">
-        {/* Top bar: Brand + Bell */}
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white/5 border border-white/10">
             <div className="w-4 h-4 rounded bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-[9px] font-black text-white">₹</div>
             <span className="text-[9px] font-black text-amber-500 tracking-wider">ROOMKHATA PRO</span>
           </div>
-          
           <button onClick={onBellClick} className="relative flex items-center justify-center rounded-full bg-white/5 border border-white/10 transition-all active:scale-90 w-9 h-9 text-white/80">
             <i className="fa-solid fa-bell text-sm animate-none" />
-            {hasNotifications && (
-              <span className="absolute rounded-full w-2 h-2 bg-orange-500" style={{ top: 10, right: 10 }} />
-            )}
+            {hasNotifications && <span className="absolute rounded-full w-2 h-2 bg-orange-500" style={{ top: 10, right: 10 }} />}
           </button>
         </div>
         
-        {/* Animated Collapse Section */}
         <AnimatePresence>
           {!isScrolled && (
-            <motion.div
-              initial={{ opacity: 1, height: "auto" }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              transition={{ duration: 0.25, ease }}
-              className="mb-4 overflow-hidden"
-            >
+            <motion.div initial={{ opacity: 1, height: "auto" }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0, marginBottom: 0 }} transition={{ duration: 0.25, ease }} className="mb-4 overflow-hidden">
               <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5">{greet} {greetEmoji}</p>
               <h2 className="text-2xl font-black text-white tracking-tight truncate">{ownerName || "Dashboard"}</h2>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Dynamic Fintech Finance Widget */}
-        <motion.div 
-          layout
-          className="bg-white/5 border border-white/10 overflow-hidden relative" 
-          style={{ borderRadius: isScrolled ? 16 : 20 }}
-        >
+        <motion.div layout className="bg-white/5 border border-white/10 overflow-hidden relative" style={{ borderRadius: isScrolled ? 16 : 20 }}>
           <div className="flex">
             <div className="flex-1 px-4 py-3 border-r border-white/5">
               <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest block mb-0.5">Total Revenue</span>
-              <div className="text-lg font-black text-amber-500">
-                {loading ? <div className="h-5 w-20 bg-white/10 rounded animate-pulse" /> : <AnimatedNumber value={totalRevenue} />}
-              </div>
+              <div className="text-lg font-black text-amber-500">{loading ? <div className="h-5 w-20 bg-white/10 rounded animate-pulse" /> : <AnimatedNumber value={totalRevenue} />}</div>
             </div>
             <div className="flex-1 px-4 py-3">
               <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest block mb-0.5">Pending Dues</span>
-              <div className="text-lg font-black text-rose-400">
-                {loading ? <div className="h-5 w-20 bg-white/10 rounded animate-pulse" /> : <AnimatedNumber value={pendingDues} />}
-              </div>
+              <div className="text-lg font-black text-rose-400">{loading ? <div className="h-5 w-20 bg-white/10 rounded animate-pulse" /> : <AnimatedNumber value={pendingDues} />}</div>
             </div>
           </div>
-          
-          {/* Progress fill bar */}
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/5">
             <motion.div initial={{ width: 0 }} animate={{ width: `${collectionPct}%` }} transition={{ duration: 0.8, delay: 0.2 }} className="h-full bg-gradient-to-r from-orange-500 to-amber-500" />
           </div>
@@ -170,10 +199,16 @@ function FinanceHeader({ ownerName, rooms, loading, isScrolled, onBellClick, has
 }
 
 // ─────────────────────────────────────────────────────────────
-// ROOM CARD
+// ROOM CARD & STATUS CONFIG
 // ─────────────────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  paid: { border: "#E2FBEB", btnGrad: "linear-gradient(135deg,#9CA3AF,#6B7280)" },
+  pending: { border: "#FFEAD4", btnGrad: "linear-gradient(135deg,#22C55E,#16A34A)" },
+  vacant: { border: "#F3F4F6", btnGrad: "linear-gradient(135deg,#D1D5DB,#9CA3AF)" },
+};
+
 function RoomCard({ room, onToggle }) {
-  const { roomNo, tenantName, rent = 0, electricityBill = 0, status = "pending", balanceDue = 0, securityDeposit = 0, connectionCode } = room;
+  const { roomNo, tenantName, rent = 0, electricityBill = 0, status = "pending", connectionCode } = room;
   const isVacant = !tenantName?.trim();
   const cfg = STATUS_CONFIG[isVacant ? "vacant" : status] || STATUS_CONFIG.pending;
   const totalDue = rent + (electricityBill || 0);
@@ -183,20 +218,17 @@ function RoomCard({ room, onToggle }) {
       <div className={`w-9 h-9 rounded-xl mb-2.5 flex items-center justify-center font-black text-white text-sm ${isVacant ? 'bg-gray-100' : 'bg-gradient-to-br from-violet-500 to-indigo-600'}`}>
         {isVacant ? <i className="fa-solid fa-door-open text-gray-400 text-xs" /> : initials(tenantName)}
       </div>
-      
       <p className="font-black text-xs text-gray-800">Room {roomNo}</p>
       <p className="text-[10px] font-bold text-gray-400 mb-2 truncate">{isVacant ? "Vacant" : tenantName}</p>
-
       <div className="text-[10px] text-gray-600 border-t border-gray-100 pt-1.5 mt-auto mb-2.5">
         <div className="flex justify-between"><span>Rent:</span><span className="font-bold">{fmt(rent)}</span></div>
         {electricityBill > 0 && <div className="flex justify-between text-yellow-600"><span>Elec:</span><span className="font-bold">+{fmt(electricityBill)}</span></div>}
       </div>
-
       <div className="mt-auto">
         {isVacant ? (
-          <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Namaste! Room No ${roomNo} ka connection code: ${connectionCode}`)}`, "_blank")} className="w-full py-1.5 bg-orange-500 text-white rounded-xl text-[10px] font-black active:scale-95 transition-all">🔗 Invite</button>
+          <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Namaste! Room No ${roomNo} ka connection code: ${connectionCode}`)}`, "_blank")} className="w-full py-1.5 bg-orange-500 text-white rounded-xl text-[10px] font-black active:scale-95 transition-all shadow-md shadow-orange-500/20">🔗 Invite</button>
         ) : (
-          <button onClick={() => onToggle(room.id, status)} className={`w-full py-1.5 rounded-xl text-[10px] font-black active:scale-95 transition-all ${status === 'paid' ? 'bg-gray-100 text-gray-500' : 'bg-green-500 text-white'}`}>
+          <button onClick={() => onToggle(room.id, status)} className="w-full py-1.5 rounded-xl text-[10px] font-black active:scale-95 transition-all text-white" style={{ background: cfg.btnGrad }}>
             {status === 'paid' ? '✓ Paid' : '₹ Receive'}
           </button>
         )}
@@ -219,7 +251,6 @@ function BuildingGroup({ buildingId, buildingName, rooms, onToggle, onAddRoom })
           <button onClick={() => onAddRoom(buildingId)} className="px-2.5 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black active:scale-95 transition-all">+ Add Room</button>
         )}
       </div>
-      
       {rooms.length === 0 ? (
         <p className="text-[11px] text-gray-400 text-center py-4 font-medium">Is building me koi room nahi h. Naya room add karein!</p>
       ) : (
@@ -231,12 +262,6 @@ function BuildingGroup({ buildingId, buildingName, rooms, onToggle, onAddRoom })
   );
 }
 
-const STATUS_CONFIG = {
-  paid: { border: "#E2FBEB" },
-  pending: { border: "#FFEAD4" },
-  vacant: { border: "#F3F4F6" },
-};
-
 // ─────────────────────────────────────────────────────────────
 // MAIN OWNER DASHBOARD
 // ─────────────────────────────────────────────────────────────
@@ -244,7 +269,6 @@ export default function OwnerDashboardView() {
   const { authUser, setUserRole } = useApp();
   const navigate = useNavigate();
 
-  // App States
   const [rooms, setRooms] = useState([]);
   const [buildings, setBuildings] = useState({});
   const [ownerName, setOwnerName] = useState("");
@@ -256,12 +280,10 @@ export default function OwnerDashboardView() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(true);
 
-  // Modal Popups State
   const [showAddBuilding, setShowAddBuilding] = useState(false);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [selectedBuildingId, setSelectedBuildingId] = useState(null);
   
-  // Forms Memory State
   const [newBuildingName, setNewBuildingName] = useState("");
   const [newRoomData, setNewRoomData] = useState({ roomNo: "", rent: "", deposit: "" });
 
@@ -272,17 +294,13 @@ export default function OwnerDashboardView() {
   }, []);
   const dismissToast = useCallback((id) => setToasts((p) => p.filter((t) => t.id !== id)), []);
 
-  // Detect internal scrolling to trigger compact animation
-  const handleScroll = (e) => {
-    setIsScrolled(e.target.scrollTop > 24);
-  };
+  const handleScroll = (e) => setIsScrolled(e.target.scrollTop > 24);
 
   const handleBell = () => {
     setHasNotifications(false);
     toast("🔔 Sabhi kirayedaron ke khate up-to-date hain!");
   };
 
-  // Profile data fetch
   useEffect(() => {
     if (!authUser) return;
     getDocs(query(collection(db, "ownerProfiles"), where("uid", "==", authUser.uid))).then((s) => {
@@ -290,7 +308,6 @@ export default function OwnerDashboardView() {
     }).catch(() => {});
   }, [authUser]);
 
-  // Real-time listener for live screen syncing
   useEffect(() => {
     if (!authUser) return;
     setLoading(true);
@@ -308,7 +325,6 @@ export default function OwnerDashboardView() {
     return () => { unsubRooms(); unsubBuildings(); };
   }, [authUser]);
 
-  // Handle building form logic
   const handleAddBuilding = async (e) => {
     e.preventDefault();
     if (!newBuildingName.trim()) return;
@@ -318,27 +334,17 @@ export default function OwnerDashboardView() {
     } catch (err) { toast(err.message, "error"); }
   };
 
-  // Handle room form logic
   const handleAddRoom = async (e) => {
     e.preventDefault();
     try {
       await addDoc(collection(db, "rooms"), {
-        roomNo: newRoomData.roomNo.trim(),
-        rent: Number(newRoomData.rent),
-        securityDeposit: Number(newRoomData.deposit || 0),
-        buildingId: selectedBuildingId,
-        ownerId: authUser.uid,
-        connectionCode: generateCode(),
-        status: "vacant",
-        amountPaid: 0,
-        balanceDue: Number(newRoomData.rent),
-        electricityBill: 0
+        roomNo: newRoomData.roomNo.trim(), rent: Number(newRoomData.rent), securityDeposit: Number(newRoomData.deposit || 0),
+        buildingId: selectedBuildingId, ownerId: authUser.uid, connectionCode: generateCode(), status: "vacant", amountPaid: 0, balanceDue: Number(newRoomData.rent), electricityBill: 0
       });
       setShowAddRoom(false); setNewRoomData({ roomNo: "", rent: "", deposit: "" }); toast("✓ Naya room add ho gaya!");
     } catch (err) { toast(err.message, "error"); }
   };
 
-  // Handle payment status switch
   const handleToggle = useCallback(async (roomId, currentStatus) => {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
@@ -346,10 +352,7 @@ export default function OwnerDashboardView() {
       const isPaid = currentStatus === "paid";
       const total = (room.rent || 0) + (room.electricityBill || 0);
       await updateDoc(doc(db, "rooms", roomId), {
-        status: isPaid ? "pending" : "paid",
-        amountPaid: isPaid ? 0 : total,
-        balanceDue: isPaid ? total : 0,
-        paidDate: isPaid ? null : new Date().toISOString()
+        status: isPaid ? "pending" : "paid", amountPaid: isPaid ? 0 : total, balanceDue: isPaid ? total : 0, paidDate: isPaid ? null : new Date().toISOString()
       });
       toast(isPaid ? "⏳ Rent Pending mark ho gaya" : "✓ Rent Receive ho gaya!");
     } catch (err) { toast(err.message, "error"); }
@@ -363,7 +366,6 @@ export default function OwnerDashboardView() {
     }
   };
 
-  // Advanced query filters
   const filteredRooms = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rooms.filter((r) => {
@@ -373,7 +375,6 @@ export default function OwnerDashboardView() {
     });
   }, [rooms, filter, search]);
 
-  // Dynamic mapper ensuring empty buildings display perfectly
   const grouped = useMemo(() => {
     const g = {};
     Object.keys(buildings).forEach(bid => { g[bid] = []; });
@@ -387,51 +388,36 @@ export default function OwnerDashboardView() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative max-w-[550px] mx-auto bg-[#F4F6FB] shadow-xl">
-      
-      {/* HEADER BAR */}
       <FinanceHeader ownerName={ownerName} rooms={rooms} loading={loading} isScrolled={isScrolled} onBellClick={handleBell} hasNotifications={hasNotifications} />
 
-      {/* DASHBOARD CONTAINER SCOLLEFFECT */}
       <div onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 pt-5 pb-32">
         <AnimatePresence mode="wait">
           {activeNav === "home" ? (
             <motion.div key="home" initial="hidden" animate="visible" exit={{ opacity: 0 }} variants={V.stagger(0.05)}>
-              {/* Filter bar + Add building header trigger line */}
               <div className="flex justify-between items-center mb-4">
                 <FilterChips active={filter} onChange={setFilter} />
-                <button onClick={() => setShowAddBuilding(true)} className="px-3.5 py-2 text-white font-black text-[11px] rounded-xl active:scale-95 transition-all shadow-md shadow-orange-500/20" style={{ background: "linear-gradient(135deg,#FF6600,#F59E0B)" }}>
-                  + Add Building
-                </button>
+                <button onClick={() => setShowAddBuilding(true)} className="px-3.5 py-2 text-white font-black text-[11px] rounded-xl active:scale-95 transition-all shadow-md shadow-orange-500/20" style={{ background: "linear-gradient(135deg,#FF6600,#F59E0B)" }}>+ Add Building</button>
               </div>
 
-              {/* Instant dynamic search field item input */}
               <div className="relative mb-5">
                 <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
                 <input type="text" placeholder="Room number ya naam se search karein..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border border-gray-100 text-xs font-bold outline-none shadow-sm focus:border-orange-500 transition-all" />
               </div>
 
-              {/* Loading skeletons layout mapping view */}
               {loading && <div className="grid grid-cols-2 gap-3">{Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}</div>}
-
-              {/* Fallback layout interface configuration template empty panel screen layout */}
               {!loading && grouped.length === 0 && <EmptyState hasFilter={filter !== "all" || search !== ""} onAddBuilding={() => setShowAddBuilding(true)} />}
 
-              {/* Main loop logic grouping block rendering list map workflow arrays mapping container */}
               {!loading && grouped.map(([buildingId, buildingRooms]) => (
                 <BuildingGroup key={buildingId} buildingId={buildingId} buildingName={buildingId === "no-building" ? "Uncategorized Rooms" : buildings[buildingId]?.name || "Building"} rooms={buildingRooms} onToggle={handleToggle} onAddRoom={(id) => { setSelectedBuildingId(id); setShowAddRoom(true); }} />
               ))}
             </motion.div>
           ) : (
-            /* SPECIAL YOU PREMIUM COMPONENT HUB CONTAINER VIEW INTERFACE SCREENPORT PAGE */
             <motion.div key="you" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
               <div className="bg-white rounded-3xl p-6 text-center border border-gray-100 shadow-sm mb-2">
-                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-md">
-                  {initials(ownerName)}
-                </div>
+                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-md">{initials(ownerName)}</div>
                 <h3 className="font-black text-lg text-gray-800">{ownerName || "Makan Maalik"}</h3>
                 <p className="text-[10px] font-bold text-gray-400 mt-0.5">Premium Landlord Account</p>
               </div>
-
               <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm divide-y divide-gray-50">
                 {[
                   { icon: "fa-user-gear", text: "Account Settings", desc: "Manage profile, name & settings" },
@@ -449,16 +435,12 @@ export default function OwnerDashboardView() {
                   </button>
                 ))}
               </div>
-
-              <button onClick={handleLogout} className="w-full py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl font-black text-xs active:scale-95 transition-all shadow-sm">
-                🚪 Log Out Account
-              </button>
+              <button onClick={handleLogout} className="w-full py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl font-black text-xs active:scale-95 transition-all shadow-sm">🚪 Log Out Account</button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* FIXED FOOTER NAV BAR STICKY WRAPPER CONFIG CONTROLLER DOCK SCREEN */}
       <nav className="absolute bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 py-3 flex justify-around items-center pb-safe">
         {[
           { key: "home", icon: "fa-house", label: "Home" },
@@ -474,16 +456,12 @@ export default function OwnerDashboardView() {
         })}
       </nav>
 
-      {/* ── INTERACTIVE POPUPS MODALS STACK CONTAINER ARCHITECTURE ── */}
       <AnimatePresence>
-        {/* POPUP: ADD BUILDING MODAL TRIGGER VIEW */}
         {showAddBuilding && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddBuilding(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 15 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10 border border-gray-100">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-gradient-to-br from-orange-500 to-amber-500 text-white text-xl shadow-md shadow-orange-500/10">
-                <i className="fa-solid fa-building" />
-              </div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-gradient-to-br from-orange-500 to-amber-500 text-white text-xl shadow-md shadow-orange-500/10"><i className="fa-solid fa-building" /></div>
               <h3 className="font-black text-lg text-gray-800 mb-1">New Building</h3>
               <p className="text-[11px] font-bold text-gray-400 mb-5">Nayi property ya block jodne ke liye naam dalein.</p>
               <form onSubmit={handleAddBuilding}>
@@ -497,14 +475,11 @@ export default function OwnerDashboardView() {
           </div>
         )}
 
-        {/* POPUP: ADD ROOM MODAL CONTAINER WORKFLOW LINK TRIGGER VIEW */}
         {showAddRoom && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAddRoom(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 15 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10 border border-gray-100">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xl shadow-md shadow-indigo-500/10">
-                <i className="fa-solid fa-door-open" />
-              </div>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 bg-gradient-to-br from-violet-500 to-indigo-600 text-white text-xl shadow-md shadow-indigo-500/10"><i className="fa-solid fa-door-open" /></div>
               <h3 className="font-black text-lg text-gray-800 mb-4">Add New Room</h3>
               <form onSubmit={handleAddRoom} className="space-y-3.5">
                 <input type="text" placeholder="Room Number (e.g. Room 102)" required value={newRoomData.roomNo} onChange={e => setNewRoomData({...newRoomData, roomNo: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-xs outline-none focus:border-indigo-500 transition-all" autoFocus />
@@ -520,7 +495,6 @@ export default function OwnerDashboardView() {
         )}
       </AnimatePresence>
 
-      {/* TOAST NOTIFICATION FLOATER CONTROLLER HUB PORT STACK */}
       <Toast toasts={toasts} dismiss={dismissToast} />
     </div>
   );
