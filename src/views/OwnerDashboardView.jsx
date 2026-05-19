@@ -361,7 +361,7 @@ const SC = {
 };
 
 /* ─── Room Card ──────────────────────────────────────────── */
-function RoomCard({ room, onToggle, onEdit, onInvite }) {
+function RoomCard({ room, onToggle, onEdit, onInvite, onVerify }) {
   const {roomNo,tenantName,rent=0,electricityBill=0,status="pending",balanceDue=0,securityDeposit=0} = room;
   const vacant = !tenantName?.trim();
   const cfg = SC[vacant?"vacant":(status||"pending")] || SC.pending;
@@ -426,9 +426,9 @@ function RoomCard({ room, onToggle, onEdit, onInvite }) {
         <div style={{display:"flex",flexDirection:"column",gap:5}}>
           {status==="pending_verification" ? (
             <>
-              <button style={{width:"100%",padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
+              <button onClick={() => onVerify(room.id, true)} style={{width:"100%",padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
                 background:G.violet,color:"white",fontWeight:800,fontSize:11}}>✓ Verify</button>
-              <button style={{width:"100%",padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
+              <button onClick={() => onVerify(room.id, false)} style={{width:"100%",padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
                 background:"#F5F3FF",color:C.t2,fontWeight:700,fontSize:11}}>✗ Reject</button>
             </>
           ) : (
@@ -462,7 +462,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite }) {
 }
 
 /* ─── Building Group ─────────────────────────────────────── */
-function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite }) {
+function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onVerify }) {
   const occ = rooms.filter(r=>r.tenantName?.trim()).length;
   return (
     <div style={{marginBottom:24}}>
@@ -506,7 +506,7 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
       {/* Room grid */}
       <motion.div variants={stagger(.04)} initial="hidden" animate="visible"
         style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
-        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite}/>)}
+        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite} onVerify={onVerify}/>)}
       </motion.div>
     </div>
   );
@@ -746,8 +746,8 @@ function Header({ ownerName, rooms, loading, scrollY }) {
 /* ─── Quick action tiles  (no Add Building — it's in section header) ── */
 function QuickTiles({ onAnalytics, onExpenses, onRemind }) {
   const tiles = [
-    {ic:"fa-solid fa-chart-line", l:"Analytics", grad:G.violet,                                   fn:onAnalytics},
-    {ic:"fa-solid fa-receipt",    l:"Expenses",  grad:G.danger,                                   fn:onExpenses},
+    {ic:"fa-solid fa-chart-line", l:"Analytics", grad:G.violet,                                    fn:onAnalytics},
+    {ic:"fa-solid fa-receipt",    l:"Expenses",  grad:G.danger,                                    fn:onExpenses},
     {ic:"fa-brands fa-whatsapp",  l:"Remind",    grad:"linear-gradient(135deg,#22C55E,#16A34A)",  fn:onRemind},
     {ic:"fa-solid fa-file-pdf",   l:"Report",    grad:"linear-gradient(135deg,#0EA5E9,#0284C7)",  fn:()=>{}},
   ];
@@ -960,14 +960,14 @@ function RemindSheet({ rooms, onClose }) {
 
   const sendReminder = (room) => {
     const msg = encodeURIComponent(
-      `🏠 *RoomKhata Pro — Rent Reminder*\n\nनमस्ते ${room.tenantName}! 🙏\n\nRoom *${room.roomNo}* का किराया अभी तक नहीं आया है।\n\nDue Amount: *₹${(room.rent||0)+(room.electricityBill||0)}*\n\nकृपया जल्दी payment करें। धन्यवाद! 🙏`
+      `🏠 *RoomKhata Pro — Rent Reminder*\n\nनमस्ते ${room.tenantName}! 🙏\n\nRoom *${room.roomNo}* का किराया अभी तक नहीं आया है。\n\nDue Amount: *₹${(room.rent||0)+(room.electricityBill||0)}*\n\nकृपया जल्दी payment करें। धन्यवाद! 🙏`
     );
     window.open(`https://wa.me/91${room.tenantPhone}?text=${msg}`, "_blank");
   };
 
   const sendAll = () => pendingTenants.forEach(r => {
     const msg = encodeURIComponent(
-      `🏠 *RoomKhata Pro — Rent Reminder*\n\nनमस्ते ${r.tenantName}! 🙏\n\nRoom *${r.roomNo}* का किराया pending है।\n\nDue: *₹${(r.rent||0)+(r.electricityBill||0)}*\n\nPlease pay soon. धन्यवाद! 🙏`
+      `🏠 *RoomKhata Pro — Rent Reminder*\n\nनमस्ते ${r.tenantName}! 🙏\n\nRoom *${r.roomNo}* का किराया pending है。\n\nDue: *₹${(r.rent||0)+(r.electricityBill||0)}*\n\nPlease pay soon. धन्यवाद! 🙏`
     );
     window.open(`https://wa.me/91${r.tenantPhone}?text=${msg}`, "_blank");
   });
@@ -1258,10 +1258,10 @@ export default function OwnerDashboardView() {
   const [tab,       setTab]        = useState("home");
   const [toasts,    setToasts]     = useState([]);
 
-  const [addBldg,    setAddBldg]    = useState(false);
+  const [addBldg,    setAddBldg]   = useState(false);
   const [addRoomBid, setAddRoomBid] = useState(null);
-  const [editRoom,   setEditRoom]   = useState(null);
-  const [youOpen,    setYouOpen]    = useState(false);
+  const [editRoom,   setEditRoom]  = useState(null);
+  const [youOpen,    setYouOpen]   = useState(false);
   const [inviteRoom, setInviteRoom] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showExpenses,  setShowExpenses]  = useState(false);
@@ -1325,6 +1325,31 @@ export default function OwnerDashboardView() {
     }catch(e){toast(e.message,"error");}
   },[rooms,toast]);
 
+  /* Verify Payment (New fix added here) */
+  const handleVerify = useCallback(async (roomId, isApproved) => {
+    const r = rooms.find(x => x.id === roomId);
+    if (!r) return;
+    try {
+      if (isApproved) {
+        const tot = (r.rent || 0) + (r.electricityBill || 0);
+        await updateDoc(doc(db, "rooms", roomId), {
+          status: "paid",
+          amountPaid: tot,
+          balanceDue: 0,
+          paidDate: new Date().toISOString()
+        });
+        toast("✓ Payment verified & accepted!");
+      } else {
+        await updateDoc(doc(db, "rooms", roomId), {
+          status: "pending"
+        });
+        toast("✗ Payment rejected", "error");
+      }
+    } catch(e) {
+      toast(e.message, "error");
+    }
+  }, [rooms, toast]);
+
   /* You-sheet actions */
   const handleYou = useCallback(async action=>{
     if(action==="logout"){
@@ -1363,11 +1388,17 @@ export default function OwnerDashboardView() {
     });
   },[rooms,filter,search]);
 
-  const grouped = useMemo(()=>{
-    const g={};
-    filtered.forEach(r=>{const bid=r.buildingId||"no-building";(g[bid]=g[bid]||[]).push(r);});
+  /* Empty building fix added here */
+  const grouped = useMemo(() => {
+    const g = {};
+    Object.keys(buildings).forEach(bid => { g[bid] = []; });
+    filtered.forEach(r => {
+      const bid = r.buildingId || "no-building";
+      if (!g[bid]) g[bid] = [];
+      g[bid].push(r);
+    });
     return Object.entries(g);
-  },[filtered]);
+  }, [filtered, buildings]);
 
   const hasFilter = filter!=="all"||search.trim()!=="";
 
@@ -1496,6 +1527,7 @@ export default function OwnerDashboardView() {
                   onEdit={r=>setEditRoom(r)}
                   onAddRoom={id=>setAddRoomBid(id)}
                   onInvite={r=>setInviteRoom(r)}
+                  onVerify={handleVerify}
                 />
               ))}
             </AnimatePresence>
