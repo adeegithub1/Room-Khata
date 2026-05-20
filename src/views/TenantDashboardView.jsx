@@ -503,21 +503,34 @@ export default function TenantDashboardView() {
 
     const init = async () => {
       try {
-        // Find room by tenantUid
-        const snap = await getDocs(
-          query(collection(db,"rooms"),where("tenantUid","==",authUser.uid))
-        );
-        if(snap.empty){ setLoading(false); return; }
-        const roomId = snap.docs[0].id;
+        // Step 1: Get roomId from tenantProfiles (direct doc read by uid — no query needed)
+        const tDoc = await getDoc(doc(db,"tenantProfiles",authUser.uid));
+        if(!tDoc.exists()){
+          // Fallback: try query in case profile was written differently
+          const snap = await getDocs(
+            query(collection(db,"rooms"),where("tenantUid","==",authUser.uid))
+          );
+          if(snap.empty){ setLoading(false); return; }
+          subscribeToRoom(snap.docs[0].id);
+          return;
+        }
+        const roomId = tDoc.data().roomId;
+        if(!roomId){ setLoading(false); return; }
+        subscribeToRoom(roomId);
+      } catch(err) {
+        console.error("TenantDashboard init error:", err);
+        setLoading(false);
+      }
 
-        // Live room subscription
+      function subscribeToRoom(roomId) {
+        // Step 2: Direct doc subscription — tenant has read access to their room
         unsubRoom = onSnapshot(doc(db,"rooms",roomId), async rSnap=>{
-          if(!rSnap.exists()) return;
+          if(!rSnap.exists()){ setLoading(false); return; }
           const data = {id:rSnap.id,...rSnap.data()};
           setRoom(data);
           setLoading(false);
 
-          // Fetch building name
+          // Fetch building name (direct doc read)
           if(data.buildingId){
             try {
               const bSnap = await getDoc(doc(db,"buildings",data.buildingId));
@@ -525,7 +538,7 @@ export default function TenantDashboardView() {
             }catch{}
           }
 
-          // Fetch owner profile (UPI ID + name)
+          // Fetch owner profile — query by uid field
           if(data.ownerId){
             try {
               const oSnap = await getDocs(
@@ -538,20 +551,20 @@ export default function TenantDashboardView() {
               }
             }catch{}
           }
+        }, err=>{
+          console.error("Room snapshot error:", err);
+          setLoading(false);
         });
         unsubRef.current = unsubRoom;
 
-        // Payment history (one-shot, sorted)
-        try {
-          const hSnap = await getDocs(
-            query(collection(db,"paymentHistory"),where("roomId","==",roomId))
-          );
-          const list = hSnap.docs.map(d=>({id:d.id,...d.data()}));
-          list.sort((a,b)=>new Date(b.paidAt||b.createdAt||0)-new Date(a.paidAt||a.createdAt||0));
-          setHistory(list);
-        }catch{}
-
-      }catch{ setLoading(false); }
+        // Payment history
+        getDocs(query(collection(db,"paymentHistory"),where("roomId","==",roomId)))
+          .then(hSnap=>{
+            const list = hSnap.docs.map(d=>({id:d.id,...d.data()}));
+            list.sort((a,b)=>new Date(b.paidAt||b.createdAt||0)-new Date(a.paidAt||a.createdAt||0));
+            setHistory(list);
+          }).catch(()=>{});
+      }
     };
 
     init();
