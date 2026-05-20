@@ -16,10 +16,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  doc, onSnapshot,
+  doc, getDoc, onSnapshot,
   collection, addDoc, getDocs,
-  query, orderBy, where,
-  updateDoc,
+  query, where,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../firebase/config";
@@ -447,55 +446,95 @@ export default function TenantDashboardView() {
   }, []);
 
   // ── Find tenant's room then subscribe ─────────────────────
+  // Strategy (in order):
+  //   1. rooms where tenantUid == authUser.uid  (already linked via UID)
+  //   2. rooms where tenantPhone == authUser.phoneNumber  (linked via phone)
+  //   3. tenantProfiles doc for authUser.uid → read roomId stored there
+  //      (written when tenant entered connection code)
   useEffect(() => {
     if (!authUser) return;
     let unsubRoom = null;
 
+    const loadSecondary = async (roomId, ownerId, buildingId) => {
+      // building name — single doc read, always allowed for tenant of that building
+      if (buildingId) {
+        try {
+          const bSnap = await getDoc(doc(db, "buildings", buildingId));
+          if (bSnap.exists()) setBuildingName(bSnap.data().name || "");
+        } catch { /* building read denied — not critical */ }
+      }
+      // owner UPI — stored on ownerProfiles/{ownerId} doc, try direct doc read
+      if (ownerId) {
+        try {
+          const oSnap = await getDoc(doc(db, "ownerProfiles", ownerId));
+          if (oSnap.exists()) setOwnerUpiId(oSnap.data().upiId || "");
+        } catch { /* upi read denied — not critical, pay sheet still works */ }
+      }
+    };
+
     const init = async () => {
       try {
-        // Find room linked to this tenant's UID
-        const snap = await (
-          getDocs(query(collection(db, "rooms"), where("tenantUid", "==", authUser.uid)))
+        let roomId = null;
+
+        // ── attempt 1: tenantUid field ──────────────────────
+        try {
+          const s1 = await getDocs(
+            query(collection(db, "rooms"), where("tenantUid", "==", authUser.uid))
+          );
+          if (!s1.empty) roomId = s1.docs[0].id;
+        } catch { /* rules may block collection query — fall through */ }
+
+        // ── attempt 2: tenantPhone field ────────────────────
+        if (!roomId && authUser.phoneNumber) {
+          try {
+            const phone = authUser.phoneNumber.replace(/^\+91/, "").replace(/\D/g, "");
+            const s2 = await getDocs(
+              query(collection(db, "rooms"), where("tenantPhone", "==", phone))
+            );
+            if (!s2.empty) roomId = s2.docs[0].id;
+          } catch { /* fall through */ }
+        }
+
+        // ── attempt 3: tenantProfiles/{uid} doc ─────────────
+        // After a tenant enters a connection code the app writes:
+        //   tenantProfiles/{uid} = { roomId, ownerId, ... }
+        if (!roomId) {
+          try {
+            const tpSnap = await getDoc(doc(db, "tenantProfiles", authUser.uid));
+            if (tpSnap.exists() && tpSnap.data().roomId) roomId = tpSnap.data().roomId;
+          } catch { /* fall through */ }
+        }
+
+        if (!roomId) { setLoading(false); return; }
+
+        // ── live subscription on the room doc ───────────────
+        // onSnapshot on a single doc only requires read access to that doc,
+        // which Firestore rules grant to the tenant whose UID/phone matches.
+        unsubRoom = onSnapshot(
+          doc(db, "rooms", roomId),
+          (rSnap) => {
+            if (!rSnap.exists()) { setLoading(false); return; }
+            const data = { id: rSnap.id, ...rSnap.data() };
+            setRoom(data);
+            setLoading(false);
+            // load building + owner UPI in background (non-blocking)
+            loadSecondary(roomId, data.ownerId, data.buildingId);
+          },
+          () => setLoading(false)   // onError — show "room not found"
         );
-        if (snap.empty) { setLoading(false); return; }
-
-        const roomId = snap.docs[0].id;
-
-        // Live subscription
-        unsubRoom = onSnapshot(doc(db, "rooms", roomId), async (rSnap) => {
-          if (!rSnap.exists()) return;
-          const data = { id: rSnap.id, ...rSnap.data() };
-          setRoom(data);
-          setLoading(false);
-
-          // Load building name
-          if (data.buildingId) {
-            try {
-              const { getDoc } = await import("firebase/firestore");
-              const bSnap = await getDoc(doc(db, "buildings", data.buildingId));
-              if (bSnap.exists()) setBuildingName(bSnap.data().name || "");
-            } catch { /* silent */ }
-          }
-
-          // Load owner UPI id
-          if (data.ownerId) {
-            try {
-              const { getDocs: gd, collection: col, query: q, where: wh } = await import("firebase/firestore");
-              const oSnap = await gd(q(col(db, "ownerProfiles"), wh("uid", "==", data.ownerId)));
-              if (!oSnap.empty) setOwnerUpiId(oSnap.docs[0].data().upiId || "");
-            } catch { /* silent */ }
-          }
-        });
 
         unsubRef.current = unsubRoom;
 
-        // One-shot payment history
+        // ── payment history (no orderBy → no composite index needed) ──
         try {
           const hSnap = await getDocs(
-            query(collection(db, "paymentHistory"), where("roomId", "==", roomId), orderBy("createdAt", "desc"))
+            query(collection(db, "paymentHistory"), where("roomId", "==", roomId))
           );
-          setHistory(hSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        } catch { /* silent — collection may not exist yet */ }
+          const list = hSnap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          setHistory(list);
+        } catch { /* collection may not exist yet — silent */ }
 
       } catch { setLoading(false); }
     };
