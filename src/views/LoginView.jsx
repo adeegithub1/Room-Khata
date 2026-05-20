@@ -328,38 +328,51 @@ function TenantStep({ onBack }) {
     if (!code.trim())        { setError("कृपया Connection Code डालें।"); return; }
     setLoading(true);
     try {
-      // 1. Find room with this connection code
+      // 1. Find room with this connection code — anyone signed in can query
       const snap = await getDocs(
         query(collection(db, "rooms"), where("connectionCode", "==", code.trim().toUpperCase()))
       );
-      if (snap.empty) { setError("❌ Invalid Code! मकान मालिक से सही code लें।"); setLoading(false); return; }
+      if (snap.empty) {
+        setError("❌ Invalid Code! मकान मालिक से सही code लें।");
+        setLoading(false);
+        return;
+      }
 
       const roomDoc  = snap.docs[0];
       const roomId   = roomDoc.id;
       const roomData = roomDoc.data();
 
       // 2. Anonymous sign in
-      const cred = await signInAnonymously(auth);
+      const cred      = await signInAnonymously(auth);
       const tenantUid = cred.user.uid;
 
-      // 3. Link to room
+      // 3. Save tenant profile FIRST (doc id = tenantUid)
+      //    This is how AppContext.resolveRole will find the tenant on next load
+      await setDoc(doc(db, "tenantProfiles", tenantUid), {
+        phone,
+        roomId,
+        ownerId:   roomData.ownerId || "",
+        joinedAt:  new Date().toISOString(),
+      }, { merge: true });
+
+      // 4. Link tenant UID + phone to the room
       await updateDoc(doc(db, "rooms", roomId), {
         tenantPhone: phone,
         tenantUid:   tenantUid,
         status:      roomData.status || "pending",
       });
 
-      // 4. Tenant profile
-      await setDoc(doc(db, "tenantProfiles", tenantUid),
-        { phone, roomId, joinedAt: new Date().toISOString() },
-        { merge: true }
-      );
-
-      // 5. Set role in context
+      // 5. Set role in context and navigate
       setUserRole("tenant");
       navigate("/tenant", { replace: true });
+
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      console.error("Tenant login error:", err);
+      setError(
+        err.code === "permission-denied"
+          ? "Permission error — please contact support."
+          : err.message || "Something went wrong. Please try again."
+      );
     }
     setLoading(false);
   };
