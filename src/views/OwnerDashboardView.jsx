@@ -1575,20 +1575,20 @@ export default function OwnerDashboardView() {
             )}
 
             {/* Building groups */}
-            <AnimatePresence>
-              {!loading&&grouped.map(([bid,bRooms])=>(
-                <BuildingGroup key={bid}
-                  bid={bid}
-                  name={bid==="no-building"?"Uncategorized":buildings[bid]?.name||"Building"}
-                  rooms={bRooms}
-                  onToggle={handleToggle}
-                  onEdit={r=>setEditRoom(r)}
-                  onAddRoom={id=>setAddRoomBid(id)}
-                  onInvite={r=>setInviteRoom(r)}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </AnimatePresence>
+<AnimatePresence>
+  {!loading && grouped.map(([bid, bRooms]) => (
+    <BuildingGroup key={bid}
+      bid={bid}
+      name={bid === "no-building" ? "Uncategorized" : buildings[bid]?.name || "Building"}
+      rooms={bRooms}
+      onToggle={handleToggle}
+      onEdit={r => setEditRoom(r)}
+      onAddRoom={id => setAddRoomBid(id)}
+      onInvite={r => setInviteRoom(r)}
+      onDelete={handleDelete}
+    />
+  ))}
+</AnimatePresence>
 
           </div>
         </div>
