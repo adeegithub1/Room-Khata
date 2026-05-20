@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import {
   collection, query, where, onSnapshot,
-  getDocs, addDoc, updateDoc, doc,
+  getDocs, addDoc, updateDoc, deleteDoc, doc, writeBatch,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase/config";
@@ -352,6 +352,79 @@ function Bell({ rooms }) {
   );
 }
 
+/* ─── Confirm Delete Sheet ───────────────────────────────── */
+function ConfirmDeleteSheet({ target, onConfirm, onClose }) {
+  const [busy, setBusy] = useState(false);
+  const isBuilding = target?.type === "building";
+
+  const go = async () => {
+    setBusy(true);
+    await onConfirm(target);
+    setBusy(false);
+    onClose();
+  };
+
+  return (
+    <Sheet onClose={onClose}>
+      {/* Warning icon */}
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"8px 0 20px"}}>
+        <motion.div
+          initial={{scale:0}} animate={{scale:1}} transition={{type:"spring",stiffness:400,damping:20}}
+          style={{width:68,height:68,borderRadius:22,marginBottom:16,
+            background:"rgba(225,29,72,.12)",border:"1px solid rgba(225,29,72,.25)",
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <i className={isBuilding?"fa-solid fa-building-circle-xmark":"fa-solid fa-door-closed"}
+            style={{fontSize:26,color:"#F87171"}}/>
+        </motion.div>
+        <p style={{fontWeight:900,fontSize:19,color:C.t1,marginBottom:6}}>
+          Delete {isBuilding ? "Building" : "Room"}?
+        </p>
+        <p style={{fontSize:13,color:C.t2,textAlign:"center",lineHeight:1.6,maxWidth:260}}>
+          {isBuilding
+            ? <>This will permanently delete <span style={{color:"white",fontWeight:700}}>"{target.name}"</span> and all <span style={{color:"#F87171",fontWeight:700}}>{target.roomCount} room{target.roomCount!==1?"s":""}</span> inside it.</>
+            : <>Room <span style={{color:"white",fontWeight:700}}>{target.roomNo}</span>{target.tenantName?" (assigned to "+target.tenantName+")":""} will be permanently deleted.</>
+          }
+        </p>
+        {isBuilding && target.roomCount > 0 && (
+          <div style={{marginTop:12,padding:"8px 14px",borderRadius:12,
+            background:"rgba(251,113,133,.08)",border:"1px solid rgba(251,113,133,.2)"}}>
+            <p style={{fontSize:11,fontWeight:700,color:"#FB7185",textAlign:"center"}}>
+              ⚠️ All tenant data in this building will be lost
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Buttons */}
+      <div style={{display:"flex",gap:10,marginBottom:8}}>
+        <button onClick={onClose}
+          style={{flex:1,padding:"14px",borderRadius:14,border:`1px solid ${C.bdr}`,cursor:"pointer",
+            background:"rgba(255,255,255,.06)",color:C.t2,fontWeight:700,fontSize:15,
+            fontFamily:"'Poppins',sans-serif"}}>
+          Cancel
+        </button>
+        <button onClick={go} disabled={busy}
+          style={{flex:1,padding:"14px",borderRadius:14,border:"none",cursor:"pointer",
+            background:"linear-gradient(135deg,#E11D48,#9F1239)",
+            color:"white",fontWeight:900,fontSize:15,
+            fontFamily:"'Poppins',sans-serif",
+            boxShadow:"0 5px 18px rgba(225,29,72,.3)",
+            opacity:busy?.6:1,transition:"opacity .2s",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
+          onPointerDown={e=>!busy&&(e.currentTarget.style.transform="scale(.96)")}
+          onPointerUp={e=>e.currentTarget.style.transform="scale(1)"}>
+          {busy
+            ? <svg style={{width:18,height:18,animation:"spin 1s linear infinite"}} viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12"/>
+              </svg>
+            : <><i className="fa-solid fa-trash"/> Delete</>
+          }
+        </button>
+      </div>
+    </Sheet>
+  );
+}
+
 /* ─── Status config ──────────────────────────────────────── */
 const SC = {
   paid:                 {lbl:"✓ Paid",    bdr:"rgba(134,239,172,.25)",bdg:["rgba(34,197,94,.15)","#86EFAC"],btn:G.emerald,btnL:"Undo",    av:G.violet},
@@ -362,7 +435,7 @@ const SC = {
 };
 
 /* ─── Room Card ──────────────────────────────────────────── */
-function RoomCard({ room, onToggle, onEdit, onInvite }) {
+function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
   const {roomNo,tenantName,rent=0,electricityBill=0,status="pending",balanceDue=0,securityDeposit=0} = room;
   const vacant = !tenantName?.trim();
   const cfg = SC[vacant?"vacant":(status||"pending")] || SC.pending;
@@ -374,13 +447,23 @@ function RoomCard({ room, onToggle, onEdit, onInvite }) {
         padding:"10px 10px 12px",boxShadow:"0 2px 12px rgba(0,0,0,.4)",
         display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
 
-      {/* Edit */}
-      <button onClick={()=>onEdit(room)}
-        style={{position:"absolute",top:8,right:8,width:24,height:24,borderRadius:8,
-          background:"rgba(255,255,255,.06)",border:`1px solid ${C.bdr}`,cursor:"pointer",
-          display:"flex",alignItems:"center",justifyContent:"center",zIndex:2}}>
-        <i className="fa-solid fa-pen" style={{fontSize:8,color:C.t2}}/>
-      </button>
+      {/* Edit + Delete buttons */}
+      <div style={{position:"absolute",top:8,right:8,display:"flex",gap:4,zIndex:2}}>
+        <button onClick={()=>onEdit(room)}
+          style={{width:24,height:24,borderRadius:8,
+            background:"rgba(255,255,255,.06)",border:`1px solid ${C.bdr}`,cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <i className="fa-solid fa-pen" style={{fontSize:8,color:C.t2}}/>
+        </button>
+        <button onClick={()=>onDelete(room)}
+          style={{width:24,height:24,borderRadius:8,
+            background:"rgba(225,29,72,.10)",border:"1px solid rgba(225,29,72,.2)",cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center"}}
+          onPointerDown={e=>e.currentTarget.style.background="rgba(225,29,72,.22)"}
+          onPointerUp={e=>e.currentTarget.style.background="rgba(225,29,72,.10)"}>
+          <i className="fa-solid fa-trash" style={{fontSize:8,color:"#F87171"}}/>
+        </button>
+      </div>
 
       {/* Avatar square */}
       <div style={{width:"100%",aspectRatio:"1",borderRadius:12,background:cfg.av,
@@ -463,7 +546,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite }) {
 }
 
 /* ─── Building Group ─────────────────────────────────────── */
-function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite }) {
+function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDeleteRoom, onDeleteBuilding }) {
   const occ = rooms.filter(r=>r.tenantName?.trim()).length;
   return (
     <div style={{marginBottom:24}}>
@@ -479,15 +562,29 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
             <p style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:"uppercase",letterSpacing:".08em"}}>Building</p>
             <p style={{fontSize:17,fontWeight:900,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</p>
           </div>
-          {bid!=="no-building"&&(
-            <button onClick={()=>onAddRoom(bid)}
-              style={{height:34,padding:"0 12px",borderRadius:10,border:"none",cursor:"pointer",
-                background:G.brand,color:"white",fontWeight:800,fontSize:11,flexShrink:0,
-                display:"flex",alignItems:"center",gap:5,
-                boxShadow:"0 3px 10px rgba(255,107,53,.28)"}}>
-              <i className="fa-solid fa-plus" style={{fontSize:9}}/> Room
-            </button>
-          )}
+          {/* Action buttons */}
+          <div style={{display:"flex",gap:6,flexShrink:0}}>
+            {bid!=="no-building"&&(
+              <button onClick={()=>onAddRoom(bid)}
+                style={{height:34,padding:"0 12px",borderRadius:10,border:"none",cursor:"pointer",
+                  background:G.brand,color:"white",fontWeight:800,fontSize:11,
+                  display:"flex",alignItems:"center",gap:5,
+                  boxShadow:"0 3px 10px rgba(255,107,53,.28)"}}>
+                <i className="fa-solid fa-plus" style={{fontSize:9}}/> Room
+              </button>
+            )}
+            {bid!=="no-building"&&(
+              <button
+                onClick={()=>onDeleteBuilding({type:"building",id:bid,name,roomCount:rooms.length})}
+                style={{width:34,height:34,borderRadius:10,cursor:"pointer",flexShrink:0,
+                  background:"rgba(225,29,72,.10)",border:"1px solid rgba(225,29,72,.22)",
+                  display:"flex",alignItems:"center",justifyContent:"center"}}
+                onPointerDown={e=>e.currentTarget.style.background="rgba(225,29,72,.22)"}
+                onPointerUp={e=>e.currentTarget.style.background="rgba(225,29,72,.10)"}>
+                <i className="fa-solid fa-trash" style={{fontSize:12,color:"#F87171"}}/>
+              </button>
+            )}
+          </div>
         </div>
         {/* Stats strip */}
         <div style={{display:"flex",paddingTop:10,borderTop:`1px solid ${C.bdr}`}}>
@@ -507,7 +604,11 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
       {/* Room grid */}
       <motion.div variants={stagger(.04)} initial="hidden" animate="visible"
         style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
-        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite}/>)}
+        {rooms.map(r=>(
+          <RoomCard key={r.id} room={r}
+            onToggle={onToggle} onEdit={onEdit} onInvite={onInvite}
+            onDelete={onDeleteRoom}/>
+        ))}
       </motion.div>
     </div>
   );
@@ -1286,6 +1387,7 @@ export default function OwnerDashboardView() {
   const [showRemind,    setShowRemind]    = useState(false);
   const [showTenants,   setShowTenants]   = useState(false);
   const [showPayments,  setShowPayments]  = useState(false);
+  const [deleteTarget,  setDeleteTarget]  = useState(null);
 
   const unsubR   = useRef(null);
   const unsubB   = useRef(null);
@@ -1369,6 +1471,24 @@ export default function OwnerDashboardView() {
     if(k==="tenants")  setShowTenants(true);
     if(k==="payments") setShowPayments(true);
   },[]);
+
+  /* Delete room / building */
+  const handleConfirmDelete = useCallback(async(target)=>{
+    try {
+      if(target.type==="room"){
+        await deleteDoc(doc(db,"rooms",target.id));
+        toast(`🗑️ Room ${target.roomNo} deleted`);
+      } else if(target.type==="building"){
+        // batch-delete all rooms in this building, then the building doc
+        const batch = writeBatch(db);
+        const roomsInBuilding = rooms.filter(r=>r.buildingId===target.id);
+        roomsInBuilding.forEach(r=>batch.delete(doc(db,"rooms",r.id)));
+        batch.delete(doc(db,"buildings",target.id));
+        await batch.commit();
+        toast(`🗑️ "${target.name}" and ${roomsInBuilding.length} room${roomsInBuilding.length!==1?"s":""} deleted`);
+      }
+    }catch(e){toast(e.message,"error");}
+  },[rooms,toast]);
 
   /* Filtered + grouped */
   const filtered = useMemo(()=>{
@@ -1520,6 +1640,8 @@ export default function OwnerDashboardView() {
                   onEdit={r=>setEditRoom(r)}
                   onAddRoom={id=>setAddRoomBid(id)}
                   onInvite={r=>setInviteRoom(r)}
+                  onDeleteRoom={r=>setDeleteTarget({type:"room",id:r.id,roomNo:r.roomNo,tenantName:r.tenantName})}
+                  onDeleteBuilding={t=>setDeleteTarget(t)}
                 />
               ))}
             </AnimatePresence>
@@ -1549,6 +1671,12 @@ export default function OwnerDashboardView() {
         {youOpen&&(
           <YouSheet key="you" ownerName={ownerName} authUser={authUser}
             onClose={()=>{setYouOpen(false);setTab("home");}} onAction={handleYou}/>
+        )}
+        {deleteTarget&&(
+          <ConfirmDeleteSheet key="del"
+            target={deleteTarget}
+            onConfirm={handleConfirmDelete}
+            onClose={()=>setDeleteTarget(null)}/>
         )}
       </AnimatePresence>
     </>
