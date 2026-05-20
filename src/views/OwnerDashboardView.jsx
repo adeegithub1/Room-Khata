@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import {
   collection, query, where, onSnapshot,
-  getDocs, addDoc, updateDoc, deleteDoc, doc, writeBatch,
+  getDocs, addDoc, updateDoc, doc, deleteDoc,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase/config";
@@ -16,16 +16,16 @@ const C = {
   vi:     "#4158D0", vi2:    "#C850C0",
   em:     "#00C9A7", rose:   "#FB7185",
   indigo: "#1E1B4B",
-  bg:     "#0D0D0D", card:   "#161616",
-  card2:  "#1C1C1C", bdr:    "#2A2A2A",
-  t1:     "#FFFFFF", t2:     "#9A9A9A", t3:     "#555555",
+  bg:     "#F5F3FF", card:   "#FFFFFF",
+  bdr:    "#EDE9FE",
+  t1:     "#1A1D2E", t2:     "#6B7280", t3:     "#A0AEC0",
 };
 const G = {
   brand:   `linear-gradient(135deg,${C.brand},${C.brand2})`,
   violet:  `linear-gradient(135deg,${C.vi},${C.vi2})`,
   emerald: `linear-gradient(135deg,${C.em},#00B4D8)`,
   danger:  `linear-gradient(135deg,#E11D48,#9F1239)`,
-  hdr:     `linear-gradient(160deg,#080808 0%,#0F0F0F 40%,#141414 75%,#0A0A0A 100%)`,
+  hdr:     `linear-gradient(160deg,#07050F 0%,#130D2E 40%,#2A1860 75%,#130D2E 100%)`,
 };
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -75,7 +75,7 @@ function Toasts({ list, dismiss }) {
             style={{pointerEvents:"auto",maxWidth:320,width:"100%",padding:"12px 16px",borderRadius:16,
               cursor:"pointer",color:"white",fontWeight:700,fontSize:14,
               background:t.type==="error"?G.danger:G.emerald,
-              boxShadow:"0 8px 24px rgba(0,0,0,.6)"}}>
+              boxShadow:"0 8px 24px rgba(0,0,0,.25)"}}>
             {t.msg}
           </motion.div>
         ))}
@@ -89,15 +89,14 @@ function Sheet({ onClose, title, children }) {
   return (
     <motion.div variants={vFade} initial="hidden" animate="visible" exit="exit"
       style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.82)"}} onClick={onClose}/>
+      <div style={{position:"absolute",inset:0,background:"rgba(7,5,15,.72)"}} onClick={onClose}/>
       <motion.div variants={vSheet} initial="hidden" animate="visible" exit="exit"
-        style={{position:"relative",zIndex:1,background:C.card,borderRadius:"22px 22px 0 0",
-          border:`1px solid ${C.bdr}`,
+        style={{position:"relative",zIndex:1,background:"#fff",borderRadius:"22px 22px 0 0",
           maxHeight:"88dvh",overflowY:"auto",
           paddingBottom:"max(24px,env(safe-area-inset-bottom))"}}>
-        <div style={{width:36,height:4,borderRadius:9,background:C.bdr,margin:"12px auto 0"}}/>
+        <div style={{width:36,height:4,borderRadius:9,background:"#DDD6FE",margin:"12px auto 0"}}/>
         <div style={{padding:"14px 18px 0"}}>
-          {title && <p style={{fontWeight:900,fontSize:18,color:C.t1,marginBottom:16}}>{title}</p>}
+          {title && <p style={{fontWeight:900,fontSize:18,color:C.indigo,marginBottom:16}}>{title}</p>}
           {children}
         </div>
       </motion.div>
@@ -110,7 +109,7 @@ function SInput({ label, value, onChange, placeholder, type="text", min, max, re
   const [f,setF] = useState(false);
   return (
     <div style={{marginBottom:13}}>
-      <label style={{display:"block",fontSize:11,fontWeight:700,color:C.brand,
+      <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
         textTransform:"uppercase",letterSpacing:".08em",marginBottom:5}}>
         {label}{required?" *":""}
       </label>
@@ -120,9 +119,9 @@ function SInput({ label, value, onChange, placeholder, type="text", min, max, re
         onFocus={()=>setF(true)} onBlur={()=>setF(false)}
         style={{width:"100%",padding:"13px 14px",borderRadius:13,fontSize:15,fontWeight:500,outline:"none",
           fontFamily:"'Poppins',sans-serif",color:C.t1,
-          background:f?"#1E1E1E":C.card2,
+          background:f?"#fff":"#F5F3FF",
           border:`1.5px solid ${f?C.brand:C.bdr}`,
-          boxShadow:f?`0 0 0 3px rgba(255,107,53,.15)`:"none",
+          boxShadow:f?`0 0 0 3px rgba(255,107,53,.1)`:"none",
           transition:"all .2s"}}/>
     </div>
   );
@@ -148,7 +147,7 @@ function SBtn({ loading, label, grad }) {
 }
 function ErrBox({ msg }) {
   return msg
-    ? <div style={{background:"rgba(225,29,72,.15)",border:"1px solid rgba(225,29,72,.3)",color:"#FB7185",padding:"10px 13px",borderRadius:11,fontSize:13,fontWeight:600,marginBottom:12}}>{msg}</div>
+    ? <div style={{background:"#FEE2E2",color:"#991B1B",padding:"10px 13px",borderRadius:11,fontSize:13,fontWeight:600,marginBottom:12}}>{msg}</div>
     : null;
 }
 
@@ -252,10 +251,10 @@ function Bell({ rooms }) {
   const notifs = useMemo(()=>{
     const list=[];
     rooms.filter(r=>r.status==="pending_verification"&&r.tenantName?.trim())
-      .forEach(r=>list.push({id:`pv-${r.id}`,icon:"fa-solid fa-eye",col:"#C850C0",bg:"rgba(200,80,192,.18)",
+      .forEach(r=>list.push({id:`pv-${r.id}`,icon:"fa-solid fa-eye",col:"#C850C0",bg:"rgba(200,80,192,.13)",
         title:"Verify payment",sub:`Room ${r.roomNo} · ${r.tenantName}`}));
     rooms.filter(r=>r.status==="pending"&&r.tenantName?.trim()).slice(0,3)
-      .forEach(r=>list.push({id:`pd-${r.id}`,icon:"fa-solid fa-clock",col:"#FB7185",bg:"rgba(251,113,133,.18)",
+      .forEach(r=>list.push({id:`pd-${r.id}`,icon:"fa-solid fa-clock",col:"#FB7185",bg:"rgba(251,113,133,.13)",
         title:"Rent due",sub:`Room ${r.roomNo} · ${r.tenantName} · ${inr(r.rent)}`}));
     return list;
   },[rooms]);
@@ -270,11 +269,11 @@ function Bell({ rooms }) {
   return (
     <div ref={ref} style={{position:"relative",zIndex:50}}>
       <motion.button whileTap={{scale:.88}} onClick={()=>setOpen(p=>!p)}
-        style={{width:38,height:38,borderRadius:12,cursor:"pointer",position:"relative",
+        style={{width:40,height:40,borderRadius:"50%",cursor:"pointer",position:"relative",
           display:"flex",alignItems:"center",justifyContent:"center",
-          background:open?"rgba(255,107,53,.15)":"rgba(255,255,255,.06)",
-          border:`1px solid ${open?"rgba(255,107,53,.3)":"rgba(255,255,255,.1)"}`}}>
-        <motion.i className="fa-regular fa-bell" style={{fontSize:15,color:"rgba(255,255,255,.88)"}}
+          background:open?"rgba(255,255,255,.2)":"rgba(255,255,255,.09)",
+          border:"1px solid rgba(255,255,255,.15)"}}>
+        <motion.i className="fa-regular fa-bell" style={{fontSize:16,color:"rgba(255,255,255,.88)"}}
           animate={notifs.length&&!open?{rotate:[0,-15,15,-10,10,0]}:{}}
           transition={{duration:.5,repeat:Infinity,repeatDelay:4}}/>
         <AnimatePresence>
@@ -285,7 +284,7 @@ function Bell({ rooms }) {
               style={{position:"absolute",top:-3,right:-3,minWidth:16,height:16,
                 borderRadius:9,background:"#E11D48",color:"white",fontSize:9,fontWeight:900,
                 display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px",
-                boxShadow:"0 0 0 2px #0D0D0D"}}>
+                boxShadow:"0 0 0 2px rgba(7,5,15,.7)"}}>
               {notifs.length>9?"9+":notifs.length}
             </motion.span>
           )}
@@ -297,11 +296,11 @@ function Bell({ rooms }) {
           <motion.div initial={{opacity:0,y:-8,scale:.96}} animate={{opacity:1,y:0,scale:1}}
             exit={{opacity:0,y:-8,scale:.96}} transition={{duration:.2,ease}}
             style={{position:"absolute",top:48,right:0,width:270,
-              background:"#161616",backdropFilter:"blur(20px)",
-              border:`1px solid ${C.bdr}`,borderRadius:20,
-              boxShadow:"0 20px 60px rgba(0,0,0,.8)",overflow:"hidden"}}>
+              background:"rgba(10,7,25,.95)",backdropFilter:"blur(20px)",
+              border:"1px solid rgba(255,255,255,.1)",borderRadius:20,
+              boxShadow:"0 20px 60px rgba(0,0,0,.5)",overflow:"hidden"}}>
             {/* Header */}
-            <div style={{padding:"11px 14px 9px",borderBottom:`1px solid ${C.bdr}`,
+            <div style={{padding:"11px 14px 9px",borderBottom:"1px solid rgba(255,255,255,.07)",
               display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{display:"flex",alignItems:"center",gap:7}}>
                 <i className="fa-solid fa-bell" style={{fontSize:11,color:C.brand2}}/>
@@ -323,7 +322,7 @@ function Bell({ rooms }) {
                 : notifs.map((n,i)=>(
                   <div key={n.id}
                     style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 14px",
-                      borderBottom:i<notifs.length-1?`1px solid ${C.bdr}`:"none"}}>
+                      borderBottom:i<notifs.length-1?"1px solid rgba(255,255,255,.05)":"none"}}>
                     <div style={{width:30,height:30,borderRadius:10,background:n.bg,flexShrink:0,
                       display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
                       <i className={n.icon} style={{fontSize:11,color:n.col}}/>
@@ -337,7 +336,7 @@ function Bell({ rooms }) {
               }
             </div>
             {notifs.length>0&&(
-              <div style={{padding:"8px 14px 12px",borderTop:`1px solid ${C.bdr}`}}>
+              <div style={{padding:"8px 14px 12px",borderTop:"1px solid rgba(255,255,255,.07)"}}>
                 <button onClick={()=>setOpen(false)}
                   style={{width:"100%",background:"none",border:"none",cursor:"pointer",
                     fontSize:11,fontWeight:700,color:C.brand2}}>
@@ -352,86 +351,13 @@ function Bell({ rooms }) {
   );
 }
 
-/* ─── Confirm Delete Sheet ───────────────────────────────── */
-function ConfirmDeleteSheet({ target, onConfirm, onClose }) {
-  const [busy, setBusy] = useState(false);
-  const isBuilding = target?.type === "building";
-
-  const go = async () => {
-    setBusy(true);
-    await onConfirm(target);
-    setBusy(false);
-    onClose();
-  };
-
-  return (
-    <Sheet onClose={onClose}>
-      {/* Warning icon */}
-      <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"8px 0 20px"}}>
-        <motion.div
-          initial={{scale:0}} animate={{scale:1}} transition={{type:"spring",stiffness:400,damping:20}}
-          style={{width:68,height:68,borderRadius:22,marginBottom:16,
-            background:"rgba(225,29,72,.12)",border:"1px solid rgba(225,29,72,.25)",
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <i className={isBuilding?"fa-solid fa-building-circle-xmark":"fa-solid fa-door-closed"}
-            style={{fontSize:26,color:"#F87171"}}/>
-        </motion.div>
-        <p style={{fontWeight:900,fontSize:19,color:C.t1,marginBottom:6}}>
-          Delete {isBuilding ? "Building" : "Room"}?
-        </p>
-        <p style={{fontSize:13,color:C.t2,textAlign:"center",lineHeight:1.6,maxWidth:260}}>
-          {isBuilding
-            ? <>This will permanently delete <span style={{color:"white",fontWeight:700}}>"{target.name}"</span> and all <span style={{color:"#F87171",fontWeight:700}}>{target.roomCount} room{target.roomCount!==1?"s":""}</span> inside it.</>
-            : <>Room <span style={{color:"white",fontWeight:700}}>{target.roomNo}</span>{target.tenantName?" (assigned to "+target.tenantName+")":""} will be permanently deleted.</>
-          }
-        </p>
-        {isBuilding && target.roomCount > 0 && (
-          <div style={{marginTop:12,padding:"8px 14px",borderRadius:12,
-            background:"rgba(251,113,133,.08)",border:"1px solid rgba(251,113,133,.2)"}}>
-            <p style={{fontSize:11,fontWeight:700,color:"#FB7185",textAlign:"center"}}>
-              ⚠️ All tenant data in this building will be lost
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Buttons */}
-      <div style={{display:"flex",gap:10,marginBottom:8}}>
-        <button onClick={onClose}
-          style={{flex:1,padding:"14px",borderRadius:14,border:`1px solid ${C.bdr}`,cursor:"pointer",
-            background:"rgba(255,255,255,.06)",color:C.t2,fontWeight:700,fontSize:15,
-            fontFamily:"'Poppins',sans-serif"}}>
-          Cancel
-        </button>
-        <button onClick={go} disabled={busy}
-          style={{flex:1,padding:"14px",borderRadius:14,border:"none",cursor:"pointer",
-            background:"linear-gradient(135deg,#E11D48,#9F1239)",
-            color:"white",fontWeight:900,fontSize:15,
-            fontFamily:"'Poppins',sans-serif",
-            boxShadow:"0 5px 18px rgba(225,29,72,.3)",
-            opacity:busy?.6:1,transition:"opacity .2s",
-            display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
-          onPointerDown={e=>!busy&&(e.currentTarget.style.transform="scale(.96)")}
-          onPointerUp={e=>e.currentTarget.style.transform="scale(1)"}>
-          {busy
-            ? <svg style={{width:18,height:18,animation:"spin 1s linear infinite"}} viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12"/>
-              </svg>
-            : <><i className="fa-solid fa-trash"/> Delete</>
-          }
-        </button>
-      </div>
-    </Sheet>
-  );
-}
-
 /* ─── Status config ──────────────────────────────────────── */
 const SC = {
-  paid:                 {lbl:"✓ Paid",    bdr:"rgba(134,239,172,.25)",bdg:["rgba(34,197,94,.15)","#86EFAC"],btn:G.emerald,btnL:"Undo",    av:G.violet},
-  partial:              {lbl:"◑ Partial", bdr:"rgba(147,197,253,.25)",bdg:["rgba(37,99,235,.15)","#93C5FD"],btn:G.emerald,btnL:"Receive", av:G.violet},
-  pending_verification: {lbl:"👀 Verify", bdr:"rgba(196,181,253,.25)",bdg:["rgba(124,58,237,.15)","#C4B5FD"],btn:G.violet, btnL:"Verify",  av:G.violet},
-  pending:              {lbl:"⏳ Pending", bdr:"rgba(252,165,165,.25)",bdg:["rgba(239,68,68,.12)","#FCA5A5"],btn:G.brand,  btnL:"Receive", av:G.violet},
-  vacant:               {lbl:"Vacant",    bdr:C.bdr,                  bdg:["rgba(255,255,255,.06)","#555555"],av:"linear-gradient(135deg,#2A2A2A,#1E1E1E)"},
+  paid:                 {lbl:"✓ Paid",    bdr:"#86EFAC",bdg:["#DCFCE7","#15803D"],btn:G.emerald,btnL:"Undo",    av:G.violet},
+  partial:              {lbl:"◑ Partial", bdr:"#93C5FD",bdg:["#DBEAFE","#1D4ED8"],btn:G.emerald,btnL:"Receive", av:G.violet},
+  pending_verification: {lbl:"👀 Verify", bdr:"#C4B5FD",bdg:["#F3E8FF","#7C3AED"],btn:G.violet, btnL:"Verify",  av:G.violet},
+  pending:              {lbl:"⏳ Pending", bdr:"#FCA5A5",bdg:["#FEF3C7","#B45309"],btn:G.brand,  btnL:"Receive", av:G.violet},
+  vacant:               {lbl:"Vacant",    bdr:C.bdr,    bdg:["#F1F5F9","#64748B"],av:"linear-gradient(135deg,#CBD5E1,#94A3B8)"},
 };
 
 /* ─── Room Card ──────────────────────────────────────────── */
@@ -443,25 +369,21 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
 
   return (
     <motion.div variants={vUp} layout
-      style={{background:C.card,border:`1px solid ${cfg.bdr}`,borderRadius:18,
-        padding:"10px 10px 12px",boxShadow:"0 2px 12px rgba(0,0,0,.4)",
+      style={{background:C.card,border:`1.5px solid ${cfg.bdr}`,borderRadius:18,
+        padding:"10px 10px 12px",boxShadow:"0 2px 8px rgba(30,27,75,.07)",
         display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
 
-      {/* Edit + Delete buttons */}
+      {/* Edit + Delete icons */}
       <div style={{position:"absolute",top:8,right:8,display:"flex",gap:4,zIndex:2}}>
         <button onClick={()=>onEdit(room)}
-          style={{width:24,height:24,borderRadius:8,
-            background:"rgba(255,255,255,.06)",border:`1px solid ${C.bdr}`,cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          style={{width:24,height:24,borderRadius:8,background:"#F5F3FF",
+            border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <i className="fa-solid fa-pen" style={{fontSize:8,color:C.t2}}/>
         </button>
-        <button onClick={()=>onDelete(room)}
-          style={{width:24,height:24,borderRadius:8,
-            background:"rgba(225,29,72,.10)",border:"1px solid rgba(225,29,72,.2)",cursor:"pointer",
-            display:"flex",alignItems:"center",justifyContent:"center"}}
-          onPointerDown={e=>e.currentTarget.style.background="rgba(225,29,72,.22)"}
-          onPointerUp={e=>e.currentTarget.style.background="rgba(225,29,72,.10)"}>
-          <i className="fa-solid fa-trash" style={{fontSize:8,color:"#F87171"}}/>
+        <button onClick={()=>onDelete("room", room.id, `Room ${roomNo}`)}
+          style={{width:24,height:24,borderRadius:8,background:"#FEE2E2",
+            border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <i className="fa-solid fa-trash" style={{fontSize:8,color:"#E11D48"}}/>
         </button>
       </div>
 
@@ -470,7 +392,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
         display:"flex",alignItems:"center",justifyContent:"center",
         color:"white",fontWeight:900,fontSize:vacant?18:15,marginBottom:8}}>
         {vacant
-          ? <i className="fa-solid fa-door-open" style={{opacity:.4,fontSize:20}}/>
+          ? <i className="fa-solid fa-door-open" style={{opacity:.5,fontSize:20}}/>
           : init(tenantName)}
       </div>
 
@@ -483,20 +405,20 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
 
       {/* Badges */}
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,marginBottom:4}}>
-        {(electricityBill||0)>0&&<span style={{fontSize:9,fontWeight:700,background:"rgba(202,138,4,.15)",color:"#FCD34D",padding:"2px 6px",borderRadius:6}}>⚡ +{inr(electricityBill)}</span>}
-        {securityDeposit>0&&<span style={{fontSize:9,fontWeight:700,background:"rgba(124,58,237,.15)",color:"#C4B5FD",padding:"2px 6px",borderRadius:6}}>🔒 {inr(securityDeposit)}</span>}
+        {(electricityBill||0)>0&&<span style={{fontSize:9,fontWeight:700,background:"#FEFCE8",color:"#CA8A04",padding:"2px 6px",borderRadius:6}}>⚡ +{inr(electricityBill)}</span>}
+        {securityDeposit>0&&<span style={{fontSize:9,fontWeight:700,background:"#F3E8FF",color:"#7C3AED",padding:"2px 6px",borderRadius:6}}>🔒 {inr(securityDeposit)}</span>}
       </div>
 
       {/* Rent row */}
       <div style={{textAlign:"center",padding:"5px 0",margin:"0 0 6px",
         borderTop:`1px solid ${C.bdr}`,borderBottom:`1px solid ${C.bdr}`}}>
         <p style={{fontSize:9,color:C.t3}}>Rent{electricityBill>0?"+Elec":""}</p>
-        <p style={{fontWeight:900,fontSize:13,color:C.t1,fontFamily:"'JetBrains Mono',monospace"}}>{inr(total)}</p>
+        <p style={{fontWeight:900,fontSize:13,color:C.t1}}>{inr(total)}</p>
       </div>
 
       {status==="partial"&&balanceDue>0&&(
-        <p style={{textAlign:"center",fontSize:9,fontWeight:700,color:"#F87171",
-          background:"rgba(239,68,68,.12)",padding:"2px 6px",borderRadius:6,marginBottom:5}}>Due {inr(balanceDue)}</p>
+        <p style={{textAlign:"center",fontSize:9,fontWeight:700,color:"#991B1B",
+          background:"#FEE2E2",padding:"2px 6px",borderRadius:6,marginBottom:5}}>Due {inr(balanceDue)}</p>
       )}
 
       {/* Status badge */}
@@ -513,7 +435,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
               <button style={{width:"100%",padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
                 background:G.violet,color:"white",fontWeight:800,fontSize:11}}>✓ Verify</button>
               <button style={{width:"100%",padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
-                background:"rgba(255,255,255,.06)",color:C.t2,fontWeight:700,fontSize:11}}>✗ Reject</button>
+                background:"#F5F3FF",color:C.t2,fontWeight:700,fontSize:11}}>✗ Reject</button>
             </>
           ) : (
             <>
@@ -525,8 +447,8 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
                 ₹ {cfg.btnL}
               </button>
               <button style={{width:"100%",padding:"8px",borderRadius:10,cursor:"pointer",
-                background:"rgba(202,138,4,.12)",color:"#FCD34D",fontWeight:700,fontSize:11,
-                border:"1px solid rgba(202,138,4,.2)"}}>
+                background:"#FEFCE8",color:"#CA8A04",fontWeight:700,fontSize:11,
+                border:"1px solid #FEF08A"}}>
                 ⚡ Add Bill
               </button>
             </>
@@ -535,7 +457,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
       ) : (
         <div style={{display:"flex",gap:5}}>
           <button style={{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
-            background:"rgba(255,255,255,.06)",color:C.t1,fontWeight:700,fontSize:10}}>+ Assign</button>
+            background:"#F5F3FF",color:C.indigo,fontWeight:700,fontSize:10}}>+ Assign</button>
           <button onClick={()=>onInvite(room)}
             style={{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
               background:G.brand,color:"white",fontWeight:800,fontSize:10}}>🔗 Invite</button>
@@ -546,13 +468,13 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
 }
 
 /* ─── Building Group ─────────────────────────────────────── */
-function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDeleteRoom, onDeleteBuilding }) {
+function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDelete }) {
   const occ = rooms.filter(r=>r.tenantName?.trim()).length;
   return (
     <div style={{marginBottom:24}}>
       {/* Header card */}
-      <div style={{background:C.card,border:`1px solid ${C.bdr}`,borderRadius:18,
-        padding:14,marginBottom:10,boxShadow:"0 2px 12px rgba(0,0,0,.4)"}}>
+      <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,
+        padding:14,marginBottom:10,boxShadow:"0 2px 8px rgba(30,27,75,.06)"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
           <div style={{width:44,height:44,borderRadius:14,background:G.violet,
             display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -562,9 +484,8 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
             <p style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:"uppercase",letterSpacing:".08em"}}>Building</p>
             <p style={{fontSize:17,fontWeight:900,color:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</p>
           </div>
-          {/* Action buttons */}
-          <div style={{display:"flex",gap:6,flexShrink:0}}>
-            {bid!=="no-building"&&(
+          {bid!=="no-building"&&(
+            <div style={{display:"flex",gap:6,flexShrink:0}}>
               <button onClick={()=>onAddRoom(bid)}
                 style={{height:34,padding:"0 12px",borderRadius:10,border:"none",cursor:"pointer",
                   background:G.brand,color:"white",fontWeight:800,fontSize:11,
@@ -572,29 +493,23 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
                   boxShadow:"0 3px 10px rgba(255,107,53,.28)"}}>
                 <i className="fa-solid fa-plus" style={{fontSize:9}}/> Room
               </button>
-            )}
-            {bid!=="no-building"&&(
-              <button
-                onClick={()=>onDeleteBuilding({type:"building",id:bid,name,roomCount:rooms.length})}
-                style={{width:34,height:34,borderRadius:10,cursor:"pointer",flexShrink:0,
-                  background:"rgba(225,29,72,.10)",border:"1px solid rgba(225,29,72,.22)",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}
-                onPointerDown={e=>e.currentTarget.style.background="rgba(225,29,72,.22)"}
-                onPointerUp={e=>e.currentTarget.style.background="rgba(225,29,72,.10)"}>
-                <i className="fa-solid fa-trash" style={{fontSize:12,color:"#F87171"}}/>
+              <button onClick={()=>onDelete("building", bid, name)}
+                style={{height:34,width:34,borderRadius:10,border:"none",cursor:"pointer",
+                  background:"#FEE2E2",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <i className="fa-solid fa-trash" style={{fontSize:12,color:"#E11D48"}}/>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         {/* Stats strip */}
         <div style={{display:"flex",paddingTop:10,borderTop:`1px solid ${C.bdr}`}}>
           {[
-            {l:"Occupied",v:occ,      c:"#86EFAC"},
+            {l:"Occupied",v:occ,      c:"#16A34A"},
             {l:"Vacant",  v:rooms.length-occ, c:C.brand},
-            {l:"Total",   v:rooms.length,c:"#93C5FD"},
+            {l:"Total",   v:rooms.length,c:C.vi},
           ].map(s=>(
             <div key={s.l} style={{flex:1,textAlign:"center"}}>
-              <p style={{fontSize:18,fontWeight:900,color:s.c,lineHeight:1,fontFamily:"'JetBrains Mono',monospace"}}>{s.v}</p>
+              <p style={{fontSize:18,fontWeight:900,color:s.c,lineHeight:1}}>{s.v}</p>
               <p style={{fontSize:10,fontWeight:600,color:C.t3,marginTop:2}}>{s.l}</p>
             </div>
           ))}
@@ -604,11 +519,7 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
       {/* Room grid */}
       <motion.div variants={stagger(.04)} initial="hidden" animate="visible"
         style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
-        {rooms.map(r=>(
-          <RoomCard key={r.id} room={r}
-            onToggle={onToggle} onEdit={onEdit} onInvite={onInvite}
-            onDelete={onDeleteRoom}/>
-        ))}
+        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite} onDelete={onDelete}/>)}
       </motion.div>
     </div>
   );
@@ -627,17 +538,17 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
         <i className={icon} style={{fontSize:14,color:"white"}}/>
       </div>
       <div style={{flex:1,minWidth:0}}>
-        <p style={{fontWeight:700,fontSize:14,color:red?"#F87171":C.t1}}>{label}</p>
+        <p style={{fontWeight:700,fontSize:14,color:red?"#E11D48":C.t1}}>{label}</p>
         {sub&&<p style={{fontSize:11,color:C.t2,marginTop:1}}>{sub}</p>}
       </div>
-      {right||<i className="fa-solid fa-chevron-right" style={{fontSize:12,color:C.t3,flexShrink:0}}/>}
+      {right||<i className="fa-solid fa-chevron-right" style={{fontSize:12,color:C.bdr,flexShrink:0}}/>}
     </button>
   );
   return (
     <Sheet onClose={onClose}>
       {/* Profile card */}
       <div style={{display:"flex",alignItems:"center",gap:14,padding:14,borderRadius:16,
-        background:C.card2,marginBottom:4,border:`1px solid ${C.bdr}`}}>
+        background:C.bg,marginBottom:4}}>
         <div style={{width:52,height:52,borderRadius:16,background:G.brand,flexShrink:0,
           display:"flex",alignItems:"center",justifyContent:"center",
           color:"white",fontWeight:900,fontSize:18}}>
@@ -662,9 +573,9 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
         onClick={()=>setLanguage(language==="hi"?"en":"hi")}
         right={
           <div style={{width:46,height:24,borderRadius:99,flexShrink:0,position:"relative",cursor:"pointer",
-            background:language==="hi"?G.brand:"#2A2A2A",transition:"background .25s"}}>
+            background:language==="hi"?G.brand:"#E2E8F0",transition:"background .25s"}}>
             <div style={{position:"absolute",top:2,width:20,height:20,borderRadius:"50%",background:"white",
-              boxShadow:"0 1px 4px rgba(0,0,0,.4)",transition:"left .25s",
+              boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .25s",
               left:language==="hi"?"calc(100% - 22px)":2}}/>
           </div>
         }
@@ -678,29 +589,32 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
 
 /* ─── Bottom Nav ─────────────────────────────────────────── */
 const TABS = [
-  {k:"home",    ic:"fa-solid fa-house",     l:"HOME"},
-  {k:"tenants", ic:"fa-solid fa-users",     l:"TENANTS"},
-  {k:"payments",ic:"fa-solid fa-wallet",    l:"PAYMENTS"},
-  {k:"you",     ic:"fa-solid fa-circle-user",l:"SETTINGS"},
+  {k:"home",    ic:"fa-solid fa-house",     l:"Home"},
+  {k:"tenants", ic:"fa-solid fa-users",     l:"Tenants"},
+  {k:"payments",ic:"fa-solid fa-wallet",    l:"Payments"},
+  {k:"you",     ic:"fa-solid fa-circle-user",l:"You"},
 ];
 function BottomNav({ active, onTab }) {
   return (
     <nav style={{flexShrink:0,display:"flex",
-      background:"#111111",
+      background:"rgba(255,255,255,.97)",
       borderTop:`1px solid ${C.bdr}`,
-      boxShadow:"0 -1px 0 rgba(255,255,255,.04)",
+      boxShadow:"0 -2px 16px rgba(30,27,75,.07)",
       paddingBottom:"max(10px,env(safe-area-inset-bottom))",
       paddingTop:8,paddingLeft:4,paddingRight:4,zIndex:10}}>
       {TABS.map(t=>{
         const on=active===t.k;
         return (
           <button key={t.k} onClick={()=>onTab(t.k)}
-            style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+            style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,
               background:"none",border:"none",cursor:"pointer",padding:"4px 0",
               color:on?C.brand:C.t3,
+              transform:on?"scale(1.08) translateY(-1px)":"scale(1)",
               transition:"all .25s cubic-bezier(.34,1.56,.64,1)"}}>
-            <i className={t.ic} style={{fontSize:20}}/>
-            <span style={{fontSize:9,fontWeight:on?800:600,letterSpacing:".05em"}}>{t.l}</span>
+            <i className={t.ic} style={{fontSize:21}}/>
+            <span style={{fontSize:10,fontWeight:on?800:600}}>{t.l}</span>
+            <div style={{width:4,height:4,borderRadius:"50%",background:C.brand,
+              opacity:on?1:0,transition:"opacity .2s"}}/>
           </button>
         );
       })}
@@ -720,21 +634,25 @@ function Header({ ownerName, rooms, loading, scrollY }) {
   const exOp  = useTransform(scrollY, [CS, CE],   [1, 0]);
   const exY   = useTransform(scrollY, [CS, CE],   [0, -16]);
   const exSc  = useTransform(scrollY, [CS, CE],   [1, 0.95]);
+  // This is the key fix: drive maxHeight so the element collapses in the layout
   const exMax = useTransform(scrollY, [0, CE],    ["320px", "0px"]);
   const miOp  = useTransform(scrollY, [CS+15, CE],[0, 1]);
   const miY   = useTransform(scrollY, [CS+15, CE],[10, 0]);
 
   return (
     <header style={{background:G.hdr,flexShrink:0,position:"relative",overflow:"hidden",
-      borderBottom:`1px solid ${C.bdr}`,
       paddingTop:"max(44px,env(safe-area-inset-top))"}}>
       {/* Ambient orbs */}
-      {[[{t:-60,r:-40,w:200,cl:"rgba(255,107,53,.08)"},{b:-30,l:-20,w:160,cl:"rgba(65,88,208,.07)"}][0],
-         [{t:-60,r:-40,w:200,cl:"rgba(255,107,53,.08)"},{b:-30,l:-20,w:160,cl:"rgba(65,88,208,.07)"}][1]].map((o,i)=>(
+      {[[{t:-60,r:-40,w:200,cl:"rgba(200,80,192,.2)"},{b:-30,l:-20,w:160,cl:"rgba(65,88,208,.18)"}][0],
+         [{t:-60,r:-40,w:200,cl:"rgba(200,80,192,.2)"},{b:-30,l:-20,w:160,cl:"rgba(65,88,208,.18)"}][1]].map((o,i)=>(
         <div key={i} style={{position:"absolute",pointerEvents:"none",top:o.t,bottom:o.b,left:o.l,right:o.r,
           width:o.w,height:o.w,borderRadius:"50%",
           background:`radial-gradient(circle,${o.cl} 0%,transparent 70%)`}}/>
       ))}
+      {/* Top shimmer line */}
+      <motion.div style={{position:"absolute",top:0,left:0,right:0,height:1,pointerEvents:"none",
+        background:`linear-gradient(90deg,transparent,${C.brand2},${C.vi2},${C.brand2},transparent)`}}
+        animate={{backgroundPosition:["0% 0%","200% 0%"]}} transition={{duration:4,repeat:Infinity,ease:"linear"}}/>
 
       <div style={{position:"relative",zIndex:1,padding:"14px 16px 16px"}}>
 
@@ -744,88 +662,88 @@ function Header({ ownerName, rooms, loading, scrollY }) {
           <div style={{position:"relative",flex:1,height:38,overflow:"hidden",marginRight:8}}>
             <motion.div style={{opacity:exOp,position:"absolute",left:0,top:0,
               display:"flex",alignItems:"center",gap:8,paddingTop:4}}>
-              <div style={{width:28,height:28,borderRadius:9,background:G.brand,flexShrink:0,
+              <div style={{width:26,height:26,borderRadius:8,background:G.brand,flexShrink:0,
                 display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 10L12 3l9 7"/><path d="M5 10v11a2 2 0 002 2h10a2 2 0 002-2V10"/>
                 </svg>
               </div>
-              <div>
-                <span style={{fontWeight:900,fontSize:13,color:"white",letterSpacing:".02em",whiteSpace:"nowrap"}}>
-                  ROOMKHATA <span style={{color:C.brand,fontWeight:700}}>/ PRO</span>
-                </span>
-              </div>
+              <span style={{fontWeight:900,fontSize:12,color:C.brand2,letterSpacing:".04em",whiteSpace:"nowrap"}}>
+                RoomKhata <span style={{color:"rgba(255,255,255,.32)",fontWeight:600}}>PRO</span>
+              </span>
             </motion.div>
             <motion.div style={{opacity:miOp,y:miY,position:"absolute",left:0,top:0}}>
               <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1}}>{ownerName?.split(" ")[0]||"Dashboard"}</p>
-              <p style={{fontSize:11,color:C.t3,fontWeight:600}}>{inr(rev)} collected</p>
+              <p style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600}}>{inr(rev)} collected</p>
             </motion.div>
           </div>
 
           {/* Mini chips (collapsed) + Bell */}
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
             <motion.div style={{opacity:miOp,y:miY,display:"flex",gap:5}}>
-              <span style={{padding:"3px 7px",borderRadius:8,background:"rgba(245,166,35,.12)",
-                border:"1px solid rgba(245,166,35,.2)",fontSize:10,fontWeight:700,
+              <span style={{padding:"3px 7px",borderRadius:8,background:"rgba(245,166,35,.18)",
+                border:"1px solid rgba(245,166,35,.22)",fontSize:10,fontWeight:700,
                 color:C.brand2,fontFamily:"'JetBrains Mono',monospace"}}>{inr(rev)}</span>
-              <span style={{padding:"3px 7px",borderRadius:8,background:"rgba(251,113,133,.12)",
-                border:"1px solid rgba(251,113,133,.2)",fontSize:10,fontWeight:700,
+              <span style={{padding:"3px 7px",borderRadius:8,background:"rgba(251,113,133,.18)",
+                border:"1px solid rgba(251,113,133,.22)",fontSize:10,fontWeight:700,
                 color:"#FB7185",fontFamily:"'JetBrains Mono',monospace"}}>{inr(pend)}</span>
             </motion.div>
             <Bell rooms={rooms}/>
           </div>
         </div>
 
-        {/* Expandable section */}
+        {/* Expandable section — maxHeight drives the layout collapse */}
         <motion.div style={{
           opacity:exOp, y:exY, scale:exSc,
           maxHeight:exMax, overflow:"hidden",
         }}>
           {/* Greeting */}
-          <div style={{marginBottom:16}}>
+          <div style={{marginBottom:14}}>
             <p style={{fontSize:10,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",
-              color:C.t3,marginBottom:4}}>{em} Good {g}</p>
-            <h2 style={{fontWeight:900,fontSize:28,letterSpacing:"-.03em",color:"white",
-              fontFamily:"'Poppins',sans-serif",lineHeight:1.1}}>Hello,</h2>
-            <h2 style={{fontWeight:900,fontSize:28,letterSpacing:"-.03em",
-              fontFamily:"'Poppins',sans-serif",lineHeight:1.1,
-              background:G.brand,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>
-              {ownerName?.split(" ")[0]||"Dashboard"}
-            </h2>
+              color:"rgba(255,255,255,.42)",marginBottom:3}}>{g} {em}</p>
+            <h2 style={{fontWeight:900,fontSize:26,letterSpacing:"-.03em",color:"white",
+              fontFamily:"'Poppins',sans-serif",lineHeight:1.1}}>{ownerName||"Dashboard"}</h2>
           </div>
 
           {/* Finance widget */}
-          <div style={{borderRadius:16,background:"rgba(255,255,255,.04)",
-            border:`1px solid ${C.bdr}`,overflow:"hidden",position:"relative"}}>
+          <div style={{borderRadius:18,background:"rgba(255,255,255,.055)",
+            border:"1px solid rgba(255,255,255,.10)",overflow:"hidden",position:"relative",
+            backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)"}}>
+            <div style={{position:"absolute",top:0,left:0,right:0,height:1,
+              background:"linear-gradient(90deg,transparent 5%,rgba(255,255,255,.18) 50%,transparent 95%)"}}/>
+            {/* Two stat cols */}
             <div style={{display:"flex"}}>
               {[
-                {label:"REVENUE",val:rev,col:C.brand2,subTxt:"↑ This month",dot:"#F5A623"},
-                {label:"PENDING",val:pend,col:"#FB7185",subTxt:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} rooms due`,dot:"#FB7185"},
+                {label:"Revenue",val:rev,col:C.brand2,ibg:"rgba(245,166,35,.2)",ic:"fa-solid fa-arrow-trend-up"},
+                {label:"Pending",val:pend,col:"#FB7185",ibg:"rgba(251,113,133,.16)",ic:"fa-solid fa-clock"},
               ].map((s,i)=>(
-                <div key={s.label} style={{flex:1,padding:"14px 15px 12px",
-                  borderRight:i===0?`1px solid ${C.bdr}`:"none"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8}}>
-                    <div style={{width:6,height:6,borderRadius:"50%",background:s.dot,boxShadow:`0 0 6px ${s.dot}`}}/>
-                    <span style={{fontSize:9,fontWeight:700,color:C.t3,
+                <div key={s.label} style={{flex:1,padding:"13px 15px 11px",
+                  borderRight:i===0?"1px solid rgba(255,255,255,.07)":"none"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:7}}>
+                    <div style={{width:15,height:15,borderRadius:5,background:s.ibg,
+                      display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <i className={s.ic} style={{fontSize:7,color:s.col}}/>
+                    </div>
+                    <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,.42)",
                       textTransform:"uppercase",letterSpacing:".12em"}}>{s.label}</span>
                   </div>
-                  <div style={{fontWeight:700,fontSize:20,color:s.col,lineHeight:1,fontFamily:"'JetBrains Mono',monospace"}}>
+                  <div style={{fontWeight:700,fontSize:20,color:s.col,lineHeight:1}}>
                     {loading
-                      ? <div style={{width:80,height:24,borderRadius:8,background:"rgba(255,255,255,.06)"}}/>
+                      ? <div style={{width:80,height:24,borderRadius:8,background:"rgba(255,255,255,.08)"}}/>
                       : <Counter value={s.val}/>}
                   </div>
-                  <p style={{fontSize:9,color:C.t3,fontWeight:600,marginTop:5}}>{s.subTxt}</p>
+                  <p style={{fontSize:9,color:"rgba(255,255,255,.28)",fontWeight:600,marginTop:4}}>This month</p>
                 </div>
               ))}
             </div>
             {/* Progress */}
             <div style={{padding:"0 15px 13px"}}>
-              <div style={{height:1,background:C.bdr,marginBottom:8}}/>
+              <div style={{height:1,background:"rgba(255,255,255,.06)",marginBottom:8}}/>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                <span style={{fontSize:9,fontWeight:600,color:C.t3}}>Collection progress</span>
-                <span style={{fontSize:10,fontWeight:700,color:C.t2,fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</span>
+                <span style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,.35)"}}>Collection progress</span>
+                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.6)",fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</span>
               </div>
-              <div style={{height:3,borderRadius:99,background:C.bdr,overflow:"hidden"}}>
+              <div style={{height:3,borderRadius:99,background:"rgba(255,255,255,.07)",overflow:"hidden"}}>
                 <motion.div initial={{width:0}} animate={{width:`${pct}%`}}
                   transition={{duration:1,delay:.5,ease:[.4,0,.2,1]}}
                   style={{height:"100%",borderRadius:99,background:G.brand}}/>
@@ -838,61 +756,30 @@ function Header({ ownerName, rooms, loading, scrollY }) {
   );
 }
 
-/* ─── Quick action tiles ──────────────────────────────────── */
+/* ─── Quick action tiles  (no Add Building — it's in section header) ── */
 function QuickTiles({ onAnalytics, onExpenses, onRemind }) {
   const tiles = [
-    {ic:"fa-solid fa-plus",        l:"Add Room",  grad:G.brand,                                    fn:()=>{}},
-    {ic:"fa-solid fa-chart-line",  l:"Analytics", grad:G.violet,                                   fn:onAnalytics},
-    {ic:"fa-solid fa-receipt",     l:"Expenses",  grad:G.danger,                                   fn:onExpenses},
-    {ic:"fa-solid fa-file-pdf",    l:"Reports",   grad:"linear-gradient(135deg,#0EA5E9,#0284C7)",  fn:()=>{}},
+    {ic:"fa-solid fa-chart-line", l:"Analytics", grad:G.violet,                                   fn:onAnalytics},
+    {ic:"fa-solid fa-receipt",    l:"Expenses",  grad:G.danger,                                   fn:onExpenses},
+    {ic:"fa-brands fa-whatsapp",  l:"Remind",    grad:"linear-gradient(135deg,#22C55E,#16A34A)",  fn:onRemind},
+    {ic:"fa-solid fa-file-pdf",   l:"Report",    grad:"linear-gradient(135deg,#0EA5E9,#0284C7)",  fn:()=>{}},
   ];
-
   return (
-    <div style={{marginBottom:20}}>
-      {/* Section header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <span style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:"uppercase",letterSpacing:".1em"}}>Quick Actions</span>
-        <span style={{fontSize:10,fontWeight:700,color:C.brand}}>{tiles.length} TOOLS</span>
-      </div>
-
-      {/* List-style tiles like the screenshot */}
-      <div style={{background:C.card,borderRadius:16,border:`1px solid ${C.bdr}`,overflow:"hidden"}}>
-        {tiles.map((t,i)=>(
-          <motion.button key={t.l} whileTap={{scale:.98}} onClick={t.fn}
-            style={{width:"100%",display:"flex",alignItems:"center",gap:14,
-              padding:"14px 16px",background:"none",border:"none",cursor:"pointer",
-              borderBottom:i<tiles.length-1?`1px solid ${C.bdr}`:"none"}}>
-            <div style={{width:38,height:38,borderRadius:12,background:t.grad,
-              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <i className={t.ic} style={{fontSize:14,color:"white"}}/>
-            </div>
-            <div style={{flex:1,textAlign:"left"}}>
-              <p style={{fontWeight:700,fontSize:14,color:C.t1,lineHeight:1.2}}>{t.l}</p>
-            </div>
-            <div style={{width:18,height:18,borderRadius:5,border:`1px solid ${C.bdr}`,
-              display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <i className="fa-solid fa-chevron-right" style={{fontSize:8,color:C.t3}}/>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Remind All CTA */}
-      <motion.button whileTap={{scale:.97}} onClick={onRemind}
-        style={{width:"100%",marginTop:10,padding:"15px 16px",borderRadius:16,border:"none",cursor:"pointer",
-          background:"linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.2))",
-          border:"1px solid rgba(34,197,94,.25)",
-          display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:32,height:32,borderRadius:10,background:"rgba(34,197,94,.2)",
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <i className="fa-brands fa-whatsapp" style={{fontSize:16,color:"#86EFAC"}}/>
+    <motion.div variants={stagger(.05)} initial="hidden" animate="visible"
+      style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
+      {tiles.map(t=>(
+        <motion.button key={t.l} variants={vScale} whileTap={{scale:.88}} onClick={t.fn}
+          style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"12px 4px",
+            borderRadius:16,background:C.card,border:`1.5px solid ${C.bdr}`,
+            cursor:"pointer",boxShadow:"0 1px 6px rgba(30,27,75,.05)"}}>
+          <div style={{width:36,height:36,borderRadius:12,background:t.grad,
+            display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
+            <i className={t.ic} style={{fontSize:14,color:"white"}}/>
           </div>
-          <span style={{fontWeight:800,fontSize:14,color:"#86EFAC"}}>Remind All Pending Tenants</span>
-        </div>
-        <i className="fa-brands fa-whatsapp" style={{fontSize:18,color:"rgba(134,239,172,.4)"}}/>
-      </motion.button>
-    </div>
+          <span style={{fontSize:10,fontWeight:700,color:C.t2}}>{t.l}</span>
+        </motion.button>
+      ))}
+    </motion.div>
   );
 }
 
@@ -910,7 +797,7 @@ function AnalyticsSheet({ rooms, onClose }) {
   const pct      = totalRent>0?Math.round(revenue/totalRent*100):0;
 
   const StatCard = ({label,value,sub,color,bg})=>(
-    <div style={{background:C.card2,borderRadius:16,padding:"14px 16px",border:`1px solid ${C.bdr}`}}>
+    <div style={{background:bg||C.bg,borderRadius:16,padding:"14px 16px",border:`1.5px solid ${C.bdr}`}}>
       <p style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase",letterSpacing:".07em",marginBottom:6}}>{label}</p>
       <p style={{fontSize:24,fontWeight:900,color:color||C.t1,lineHeight:1,fontFamily:"'JetBrains Mono',monospace"}}>{value}</p>
       {sub&&<p style={{fontSize:11,color:C.t2,marginTop:4}}>{sub}</p>}
@@ -922,12 +809,12 @@ function AnalyticsSheet({ rooms, onClose }) {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
         <StatCard label="Revenue"  value={inr(revenue)}  sub="This month"         color="#F5A623"/>
         <StatCard label="Dues"     value={inr(dues)}     sub="Pending collection" color="#FB7185"/>
-        <StatCard label="Occupied" value={`${occupied}/${total}`} sub="Rooms filled" color="#93C5FD"/>
-        <StatCard label="Paid"     value={`${paid}/${occupied||1}`} sub="Paid this month" color="#86EFAC"/>
+        <StatCard label="Occupied" value={`${occupied}/${total}`} sub="Rooms filled" color={C.vi}/>
+        <StatCard label="Paid"     value={`${paid}/${occupied||1}`} sub="Paid this month" color="#00C9A7"/>
       </div>
 
       {/* Collection bar */}
-      <div style={{background:C.card2,borderRadius:16,padding:"14px 16px",border:`1px solid ${C.bdr}`,marginBottom:16}}>
+      <div style={{background:C.bg,borderRadius:16,padding:"14px 16px",border:`1.5px solid ${C.bdr}`,marginBottom:16}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
           <p style={{fontSize:12,fontWeight:700,color:C.t1}}>Collection Rate</p>
           <p style={{fontSize:14,fontWeight:900,color:C.brand,fontFamily:"'JetBrains Mono',monospace"}}>{pct}%</p>
@@ -944,10 +831,10 @@ function AnalyticsSheet({ rooms, onClose }) {
       </div>
 
       {/* Rooms summary */}
-      <div style={{background:C.card2,borderRadius:16,padding:"14px 16px",border:`1px solid ${C.bdr}`}}>
+      <div style={{background:C.bg,borderRadius:16,padding:"14px 16px",border:`1.5px solid ${C.bdr}`}}>
         <p style={{fontSize:12,fontWeight:700,color:C.t1,marginBottom:10}}>Room Status Breakdown</p>
         {[
-          {l:"Paid",      v:paid,    c:"#86EFAC",pct:total?Math.round(paid/total*100):0},
+          {l:"Paid",      v:paid,    c:"#00C9A7",pct:total?Math.round(paid/total*100):0},
           {l:"Pending",   v:pending, c:"#FB7185", pct:total?Math.round(pending/total*100):0},
           {l:"Vacant",    v:vacant,  c:C.t3,      pct:total?Math.round(vacant/total*100):0},
         ].map(row=>(
@@ -1022,23 +909,23 @@ function ExpensesSheet({ ownerId, onClose, toast }) {
       {!adding && (
         <button onClick={()=>setAdding(true)}
           style={{width:"100%",padding:"12px",borderRadius:14,border:`1.5px dashed ${C.bdr}`,
-            background:"none",cursor:"pointer",color:C.brand,fontWeight:700,fontSize:14,marginBottom:16}}>
+            background:"none",cursor:"pointer",color:C.vi,fontWeight:700,fontSize:14,marginBottom:16}}>
           <i className="fa-solid fa-plus" style={{marginRight:8}}/>Add Expense
         </button>
       )}
 
       {/* Add form */}
       {adding && (
-        <form onSubmit={handleAdd} style={{background:C.card2,borderRadius:16,padding:"14px",marginBottom:16,border:`1px solid ${C.bdr}`}}>
+        <form onSubmit={handleAdd} style={{background:C.bg,borderRadius:16,padding:"14px",marginBottom:16,border:`1.5px solid ${C.bdr}`}}>
           <SInput label="Description" value={desc} onChange={setDesc} placeholder="e.g. Plumber repair" required/>
           <SInput label="Amount (₹)" type="number" value={amount} onChange={setAmount} placeholder="500" required min="1"/>
           <div style={{marginBottom:14}}>
-            <label style={{fontSize:11,fontWeight:700,color:C.brand,textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:6}}>Category</label>
+            <label style={{fontSize:11,fontWeight:700,color:C.vi,textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:6}}>Category</label>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {CATS.map(c=>(
                 <button key={c.k} type="button" onClick={()=>setCategory(c.k)}
                   style={{padding:"5px 10px",borderRadius:20,border:"none",cursor:"pointer",fontSize:11,fontWeight:600,
-                    background:category===c.k?G.brand:"rgba(255,255,255,.06)",color:category===c.k?"white":C.t2}}>
+                    background:category===c.k?G.brand:C.card,color:category===c.k?"white":C.t2}}>
                   {c.l}
                 </button>
               ))}
@@ -1047,7 +934,7 @@ function ExpensesSheet({ ownerId, onClose, toast }) {
           <div style={{display:"flex",gap:8}}>
             <SBtn loading={saving} label="Save" grad={G.brand}/>
             <button type="button" onClick={()=>setAdding(false)}
-              style={{flex:1,padding:"14px",borderRadius:14,border:"none",cursor:"pointer",background:"rgba(255,255,255,.06)",color:C.t2,fontWeight:700,fontSize:15}}>
+              style={{flex:1,padding:"14px",borderRadius:14,border:"none",cursor:"pointer",background:C.bg,color:C.t2,fontWeight:700,fontSize:15}}>
               Cancel
             </button>
           </div>
@@ -1061,7 +948,7 @@ function ExpensesSheet({ ownerId, onClose, toast }) {
           ? <p style={{textAlign:"center",color:C.t3,fontSize:13,padding:"20px 0"}}>No expenses recorded yet.</p>
           : expenses.map(e=>(
             <div key={e.id} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:`1px solid ${C.bdr}`}}>
-              <div style={{width:36,height:36,borderRadius:10,background:C.card2,
+              <div style={{width:36,height:36,borderRadius:10,background:C.bg,
                 display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>
                 {CATS.find(c=>c.k===e.category)?.l.split(" ")[0]||"📦"}
               </div>
@@ -1069,7 +956,7 @@ function ExpensesSheet({ ownerId, onClose, toast }) {
                 <p style={{fontWeight:700,fontSize:13,color:C.t1}}>{e.description}</p>
                 <p style={{fontSize:11,color:C.t3}}>{new Date(e.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</p>
               </div>
-              <p style={{fontWeight:900,fontSize:14,color:"#F87171",fontFamily:"'JetBrains Mono',monospace"}}>-{inr(e.amount)}</p>
+              <p style={{fontWeight:900,fontSize:14,color:"#E11D48",fontFamily:"'JetBrains Mono',monospace"}}>-{inr(e.amount)}</p>
             </div>
           ))
       }
@@ -1100,10 +987,10 @@ function RemindSheet({ rooms, onClose }) {
 
   return (
     <Sheet onClose={onClose} title="📲 WhatsApp Remind">
-      <div style={{background:"rgba(34,197,94,.08)",border:"1px solid rgba(34,197,94,.2)",borderRadius:14,
+      <div style={{background:"#F0FDF4",border:"1.5px solid #86EFAC",borderRadius:14,
         padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:8}}>
-        <i className="fa-solid fa-circle-info" style={{color:"#86EFAC",marginTop:2,fontSize:13}}/>
-        <p style={{fontSize:12,color:"#86EFAC",fontWeight:500,lineHeight:1.5}}>
+        <i className="fa-solid fa-circle-info" style={{color:"#16A34A",marginTop:2,fontSize:13}}/>
+        <p style={{fontSize:12,color:"#14532D",fontWeight:500,lineHeight:1.5}}>
           यह WhatsApp पर rent reminder भेजेगा। केवल उन tenants के लिए जिनका phone number registered है।
         </p>
       </div>
@@ -1120,7 +1007,7 @@ function RemindSheet({ rooms, onClose }) {
             style={{width:"100%",padding:"13px",borderRadius:14,border:"none",cursor:"pointer",
               background:"linear-gradient(135deg,#22C55E,#16A34A)",color:"white",fontWeight:900,fontSize:15,
               display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,
-              boxShadow:"0 4px 14px rgba(34,197,94,.25)"}}>
+              boxShadow:"0 4px 14px rgba(34,197,94,.3)"}}>
             <i className="fa-brands fa-whatsapp" style={{fontSize:18}}/>
             Send to All ({pendingTenants.length})
           </button>
@@ -1169,7 +1056,7 @@ function TenantsSheet({ rooms, onClose, onEditRoom }) {
         <input value={search} onChange={e=>setSearch(e.target.value)}
           placeholder="Search tenant or room…"
           style={{width:"100%",padding:"11px 12px 11px 38px",borderRadius:12,
-            border:`1px solid ${C.bdr}`,background:C.card2,fontSize:14,
+            border:`1.5px solid ${C.bdr}`,background:C.bg,fontSize:14,
             fontWeight:500,color:C.t1,outline:"none",fontFamily:"'Poppins',sans-serif"}}
           onFocus={e=>{e.target.style.borderColor=C.brand;}}
           onBlur={e=>{e.target.style.borderColor=C.bdr;}}/>
@@ -1178,7 +1065,7 @@ function TenantsSheet({ rooms, onClose, onEditRoom }) {
       {filtered.length===0
         ? <p style={{textAlign:"center",color:C.t3,fontSize:13,padding:"24px 0"}}>No tenants found.</p>
         : filtered.map(r=>{
-          const SC2={paid:"#86EFAC",pending:"#FB7185",partial:"#F5A623",pending_verification:"#C850C0"};
+          const SC2={paid:"#00C9A7",pending:"#FB7185",partial:"#F5A623",pending_verification:"#C850C0"};
           const statusCol = SC2[r.status]||"#FB7185";
           return (
             <div key={r.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:`1px solid ${C.bdr}`}}>
@@ -1198,7 +1085,7 @@ function TenantsSheet({ rooms, onClose, onEditRoom }) {
                   {r.status==="paid"?"✓ Paid":r.status==="pending"?"⏳ Due":r.status==="pending_verification"?"👀 Verify":"◑ Partial"}
                 </span>
                 <button onClick={()=>{onEditRoom(r);onClose();}}
-                  style={{fontSize:11,fontWeight:700,color:C.brand,background:"none",border:"none",cursor:"pointer",padding:0}}>
+                  style={{fontSize:11,fontWeight:700,color:C.vi,background:"none",border:"none",cursor:"pointer",padding:0}}>
                   Edit →
                 </button>
               </div>
@@ -1242,15 +1129,15 @@ function PaymentsSheet({ rooms, onClose }) {
     <Sheet onClose={onClose} title="💰 Payments">
       {/* Summary */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-        <div style={{background:"rgba(34,197,94,.08)",borderRadius:14,padding:"12px",border:"1px solid rgba(34,197,94,.2)"}}>
-          <p style={{fontSize:10,fontWeight:700,color:"#86EFAC",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Collected</p>
-          <p style={{fontSize:20,fontWeight:900,color:"#86EFAC",fontFamily:"'JetBrains Mono',monospace"}}>{inr(totalCollected)}</p>
-          <p style={{fontSize:11,color:"rgba(134,239,172,.6)",marginTop:2}}>{paid.length} tenants</p>
+        <div style={{background:"#F0FDF4",borderRadius:14,padding:"12px",border:"1.5px solid #86EFAC"}}>
+          <p style={{fontSize:10,fontWeight:700,color:"#14532D",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Collected</p>
+          <p style={{fontSize:20,fontWeight:900,color:"#16A34A",fontFamily:"'JetBrains Mono',monospace"}}>{inr(totalCollected)}</p>
+          <p style={{fontSize:11,color:"#16A34A",marginTop:2}}>{paid.length} tenants</p>
         </div>
-        <div style={{background:"rgba(239,68,68,.08)",borderRadius:14,padding:"12px",border:"1px solid rgba(239,68,68,.2)"}}>
-          <p style={{fontSize:10,fontWeight:700,color:"#F87171",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Pending</p>
-          <p style={{fontSize:20,fontWeight:900,color:"#F87171",fontFamily:"'JetBrains Mono',monospace"}}>{inr(totalDue)}</p>
-          <p style={{fontSize:11,color:"rgba(248,113,113,.6)",marginTop:2}}>{pending.length} tenants</p>
+        <div style={{background:"#FEF2F2",borderRadius:14,padding:"12px",border:"1.5px solid #FECACA"}}>
+          <p style={{fontSize:10,fontWeight:700,color:"#7F1D1D",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Pending</p>
+          <p style={{fontSize:20,fontWeight:900,color:"#E11D48",fontFamily:"'JetBrains Mono',monospace"}}>{inr(totalDue)}</p>
+          <p style={{fontSize:11,color:"#E11D48",marginTop:2}}>{pending.length} tenants</p>
         </div>
       </div>
 
@@ -1261,7 +1148,7 @@ function PaymentsSheet({ rooms, onClose }) {
       </>}
       {paid.length>0&&<>
         <p style={{fontSize:12,fontWeight:800,color:C.t1,marginBottom:8}}>✓ Paid</p>
-        {paid.map(r=><Row key={r.id} r={r} col="#86EFAC" badge="Paid"/>)}
+        {paid.map(r=><Row key={r.id} r={r} col="#16A34A" badge="Paid"/>)}
         <div style={{marginBottom:12}}/>
       </>}
       {partial.length>0&&<>
@@ -1271,7 +1158,7 @@ function PaymentsSheet({ rooms, onClose }) {
       </>}
       {pending.length>0&&<>
         <p style={{fontSize:12,fontWeight:800,color:C.t1,marginBottom:8}}>⏳ Pending</p>
-        {pending.map(r=><Row key={r.id} r={r} col="#F87171" badge="Due"/>)}
+        {pending.map(r=><Row key={r.id} r={r} col="#E11D48" badge="Due"/>)}
       </>}
       <div style={{height:8}}/>
     </Sheet>
@@ -1289,6 +1176,7 @@ function InviteSheet({ room, onClose }) {
       setCopied(true);
       setTimeout(()=>setCopied(false),2000);
     } catch {
+      // fallback for older devices
       const el = document.createElement("textarea");
       el.value = code;
       document.body.appendChild(el);
@@ -1301,17 +1189,23 @@ function InviteSheet({ room, onClose }) {
   };
 
   const shareWhatsApp = () => {
-    const msg = encodeURIComponent(`🏠 RoomKhata Pro — Join Request\n\nRoom: ${room.roomNo}\nCode: ${code}\n\nApp install करें और यह code डालें।`);
+    const msg = encodeURIComponent(
+      `🏠 *RoomKhata Pro — Room Invitation*\n\nHello! आपको Room *${room.roomNo}* में invite किया गया है।\n\n*Connection Code: ${code}*\n\nSteps:\n1️⃣ App open करें\n2️⃣ "किरायेदार" select करें\n3️⃣ अपना WhatsApp number डालें\n4️⃣ यह code: *${code}* डालें\n\n✅ Done! आप room से connect हो जाएंगे।`
+    );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   return (
-    <Sheet onClose={onClose} title="🔗 Invite Tenant">
-      {/* Code display */}
-      <div style={{background:`linear-gradient(135deg,#1E1B4B,#2D2065)`,borderRadius:20,
-        padding:"22px 20px",marginBottom:16,textAlign:"center",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:"0 0 0 0",pointerEvents:"none",
-          background:"radial-gradient(circle at 80% 20%,rgba(255,107,53,.15) 0%,transparent 60%)"}}/>
+    <Sheet onClose={onClose} title={`🔗 Invite — Room ${room.roomNo}`}>
+      <p style={{fontSize:13,color:C.t2,marginBottom:20,lineHeight:1.6}}>
+        Tenant को यह code share करें। Login करते समय यह code डालकर वो इस room से connect हो जाएगा।
+      </p>
+
+      {/* Big code display */}
+      <div style={{background:`linear-gradient(135deg,#1E1B4B,#4C1D95)`,borderRadius:20,
+        padding:"28px 20px",textAlign:"center",marginBottom:16,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",
+          background:"rgba(200,80,192,.15)",pointerEvents:"none"}}/>
         <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.5)",
           textTransform:"uppercase",letterSpacing:".14em",marginBottom:10}}>Connection Code</p>
         <p style={{fontSize:36,fontWeight:900,color:"white",letterSpacing:".2em",
@@ -1325,9 +1219,9 @@ function InviteSheet({ room, onClose }) {
       <div style={{display:"flex",gap:10,marginBottom:12}}>
         <button onClick={copyCode}
           style={{flex:1,padding:"13px",borderRadius:14,border:"none",cursor:"pointer",
-            background:copied?"linear-gradient(135deg,#00C9A7,#00B4D8)":"rgba(255,255,255,.06)",
-            color:copied?"white":C.brand,fontWeight:800,fontSize:14,
-            transition:"all .2s",border:`1px solid ${copied?"transparent":C.bdr}`}}>
+            background:copied?"linear-gradient(135deg,#00C9A7,#00B4D8)":C.bg,
+            color:copied?"white":C.vi,fontWeight:800,fontSize:14,
+            transition:"all .2s",border:`1.5px solid ${copied?"transparent":C.bdr}`}}>
           {copied ? "✓ Copied!" : "📋 Copy Code"}
         </button>
         <button onClick={shareWhatsApp}
@@ -1340,7 +1234,7 @@ function InviteSheet({ room, onClose }) {
       </div>
 
       {/* How it works */}
-      <div style={{background:C.card2,borderRadius:16,padding:"14px 16px",border:`1px solid ${C.bdr}`}}>
+      <div style={{background:C.bg,borderRadius:16,padding:"14px 16px",border:`1.5px solid ${C.bdr}`}}>
         <p style={{fontSize:12,fontWeight:800,color:C.t1,marginBottom:10}}>Tenant कैसे join करे?</p>
         {[
           "App open करें और \"किरायेदार\" select करें",
@@ -1357,6 +1251,54 @@ function InviteSheet({ room, onClose }) {
         ))}
       </div>
       <div style={{height:8}}/>
+    </Sheet>
+  );
+}
+
+/* ─── Delete Confirm Sheet ───────────────────────────────── */
+function DeleteConfirmSheet({ target, onClose, onConfirm }) {
+  const [busy, setBusy] = useState(false);
+  const isBuilding = target?.type === "building";
+  return (
+    <Sheet onClose={onClose} title="">
+      <div style={{padding:"8px 18px 0",textAlign:"center"}}>
+        <div style={{fontSize:52,marginBottom:12}}>
+          {isBuilding ? "🏚️" : "🚪"}
+        </div>
+        <p style={{fontWeight:900,fontSize:20,color:"#1E1B4B",marginBottom:8}}>
+          {isBuilding ? "Building Delete करें?" : "Room Delete करें?"}
+        </p>
+        <p style={{fontSize:14,color:"#6B7280",marginBottom:8,lineHeight:1.6}}>
+          <strong style={{color:"#E11D48"}}>{target?.name}</strong> को permanently delete करना चाहते हैं?
+        </p>
+        {isBuilding && (
+          <div style={{background:"#FEF3C7",border:"1.5px solid #FDE68A",borderRadius:12,
+            padding:"10px 14px",marginBottom:16,textAlign:"left"}}>
+            <p style={{fontSize:12,color:"#92400E",fontWeight:600}}>
+              ⚠️ Building delete करने से उसके <strong>सभी rooms भी delete</strong> हो जाएंगे।
+            </p>
+          </div>
+        )}
+        <div style={{display:"flex",gap:10,marginTop:16}}>
+          <button onClick={onClose}
+            style={{flex:1,padding:"14px",borderRadius:14,border:"1.5px solid #EDE9FE",
+              cursor:"pointer",background:"#F5F3FF",color:"#6B7280",fontWeight:700,fontSize:15}}>
+            Cancel
+          </button>
+          <button onClick={async()=>{
+              setBusy(true);
+              await onConfirm();
+              setBusy(false);
+              onClose();
+            }} disabled={busy}
+            style={{flex:1,padding:"14px",borderRadius:14,border:"none",cursor:"pointer",
+              background:"linear-gradient(135deg,#E11D48,#9F1239)",color:"white",
+              fontWeight:900,fontSize:15,opacity:busy?.6:1}}>
+            {busy?"Deleting…":"हाँ, Delete करो"}
+          </button>
+        </div>
+        <div style={{height:8}}/>
+      </div>
     </Sheet>
   );
 }
@@ -1387,7 +1329,34 @@ export default function OwnerDashboardView() {
   const [showRemind,    setShowRemind]    = useState(false);
   const [showTenants,   setShowTenants]   = useState(false);
   const [showPayments,  setShowPayments]  = useState(false);
-  const [deleteTarget,  setDeleteTarget]  = useState(null);
+  const [deleteTarget,  setDeleteTarget]  = useState(null); // {type,id,name}
+
+  // ── Delete handler ────────────────────────────────────────
+  const handleDelete = useCallback((type, id, name) => {
+    setDeleteTarget({ type, id, name });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    const { type, id } = deleteTarget;
+    try {
+      if (type === "room") {
+        await deleteDoc(doc(db, "rooms", id));
+        toast("🗑️ Room deleted");
+      } else if (type === "building") {
+        // Delete all rooms in this building first
+        const roomSnap = await getDocs(
+          query(collection(db, "rooms"), where("buildingId", "==", id))
+        );
+        await Promise.all(roomSnap.docs.map(d => deleteDoc(doc(db, "rooms", d.id))));
+        // Delete the building
+        await deleteDoc(doc(db, "buildings", id));
+        toast("🗑️ Building and all rooms deleted");
+      }
+    } catch(e) {
+      toast(e.message, "error");
+    }
+  }, [deleteTarget, toast]);
 
   const unsubR   = useRef(null);
   const unsubB   = useRef(null);
@@ -1450,6 +1419,7 @@ export default function OwnerDashboardView() {
     if(action==="logout"){
       const uid = authUser?.uid;
       await signOut(auth);
+      // Clear any stale cached keys (belt-and-suspenders)
       if (uid) localStorage.removeItem(`rkp_role_${uid}`);
       setUserRole(null);
       navigate("/login",{replace:true});
@@ -1472,24 +1442,6 @@ export default function OwnerDashboardView() {
     if(k==="payments") setShowPayments(true);
   },[]);
 
-  /* Delete room / building */
-  const handleConfirmDelete = useCallback(async(target)=>{
-    try {
-      if(target.type==="room"){
-        await deleteDoc(doc(db,"rooms",target.id));
-        toast(`🗑️ Room ${target.roomNo} deleted`);
-      } else if(target.type==="building"){
-        // batch-delete all rooms in this building, then the building doc
-        const batch = writeBatch(db);
-        const roomsInBuilding = rooms.filter(r=>r.buildingId===target.id);
-        roomsInBuilding.forEach(r=>batch.delete(doc(db,"rooms",r.id)));
-        batch.delete(doc(db,"buildings",target.id));
-        await batch.commit();
-        toast(`🗑️ "${target.name}" and ${roomsInBuilding.length} room${roomsInBuilding.length!==1?"s":""} deleted`);
-      }
-    }catch(e){toast(e.message,"error");}
-  },[rooms,toast]);
-
   /* Filtered + grouped */
   const filtered = useMemo(()=>{
     const q=search.trim().toLowerCase();
@@ -1510,11 +1462,7 @@ export default function OwnerDashboardView() {
 
   return (
     <>
-      <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 0px; }
-      `}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* Outer shell: flex-col, fills the app-shell */}
       <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",background:C.bg}}>
@@ -1537,15 +1485,13 @@ export default function OwnerDashboardView() {
 
             {/* Section header */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-              <div>
-                <span style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:"uppercase",letterSpacing:".1em"}}>BUILDINGS</span>
-              </div>
+              <p style={{fontWeight:900,fontSize:16,color:C.t1}}>Your Buildings</p>
               <button onClick={()=>setAddBldg(true)}
-                style={{height:30,padding:"0 12px",borderRadius:8,border:"none",cursor:"pointer",
-                  background:G.brand,color:"white",fontWeight:800,fontSize:11,
-                  display:"flex",alignItems:"center",gap:5,
+                style={{height:34,padding:"0 14px",borderRadius:10,border:"none",cursor:"pointer",
+                  background:G.brand,color:"white",fontWeight:800,fontSize:12,
+                  display:"flex",alignItems:"center",gap:6,
                   boxShadow:"0 3px 12px rgba(255,107,53,.28)"}}>
-                <i className="fa-solid fa-plus" style={{fontSize:9}}/> ADD
+                <i className="fa-solid fa-plus" style={{fontSize:10}}/> Add Building
               </button>
             </div>
 
@@ -1555,11 +1501,11 @@ export default function OwnerDashboardView() {
                 style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:13,color:C.t3,pointerEvents:"none"}}/>
               <input value={search} onChange={e=>setSearch(e.target.value)}
                 placeholder="Search room or tenant…"
-                style={{width:"100%",padding:"12px 40px",borderRadius:14,
-                  border:`1px solid ${C.bdr}`,background:C.card,
+                style={{width:"100%",padding:"11px 40px",borderRadius:14,
+                  border:`1.5px solid ${C.bdr}`,background:C.card,
                   fontSize:14,fontWeight:500,color:C.t1,outline:"none",
                   fontFamily:"'Poppins',sans-serif"}}
-                onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.boxShadow=`0 0 0 3px rgba(255,107,53,.1)`;}}
+                onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.boxShadow=`0 0 0 3px rgba(255,107,53,.08)`;}}
                 onBlur={e=>{e.target.style.borderColor=C.bdr;e.target.style.boxShadow="none";}}/>
               {search&&(
                 <button onClick={()=>setSearch("")}
@@ -1579,7 +1525,6 @@ export default function OwnerDashboardView() {
                     style={{padding:"7px 16px",borderRadius:20,border:"none",cursor:"pointer",
                       whiteSpace:"nowrap",fontWeight:700,fontSize:12,flexShrink:0,
                       background:on?G.brand:C.card,color:on?"white":C.t2,
-                      border:`1px solid ${on?"transparent":C.bdr}`,
                       boxShadow:on?"0 3px 10px rgba(255,107,53,.25)":"none",
                       transition:"all .2s"}}>
                     {c.l}
@@ -1592,11 +1537,11 @@ export default function OwnerDashboardView() {
             {loading&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
                 {[...Array(6)].map((_,i)=>(
-                  <div key={i} style={{background:C.card,borderRadius:18,padding:10,border:`1px solid ${C.bdr}`}}>
-                    <div style={{width:"100%",aspectRatio:"1",borderRadius:12,marginBottom:8,background:"rgba(255,255,255,.06)",animation:"pulse 1.5s ease infinite"}}/>
-                    <div style={{height:12,width:"70%",margin:"0 auto 6px",background:"rgba(255,255,255,.06)",borderRadius:6}}/>
-                    <div style={{height:10,width:"50%",margin:"0 auto 10px",background:"rgba(255,255,255,.06)",borderRadius:6}}/>
-                    <div style={{height:32,width:"100%",background:"rgba(255,255,255,.06)",borderRadius:8}}/>
+                  <div key={i} style={{background:C.card,borderRadius:18,padding:10,border:`1.5px solid ${C.bdr}`}}>
+                    <div className="sk" style={{width:"100%",aspectRatio:"1",borderRadius:12,marginBottom:8}}/>
+                    <div className="sk" style={{height:12,width:"70%",margin:"0 auto 6px"}}/>
+                    <div className="sk" style={{height:10,width:"50%",margin:"0 auto 10px"}}/>
+                    <div className="sk" style={{height:32,width:"100%"}}/>
                   </div>
                 ))}
               </div>
@@ -1606,9 +1551,9 @@ export default function OwnerDashboardView() {
             {!loading&&grouped.length===0&&(
               <motion.div variants={vScale} initial="hidden" animate="visible"
                 style={{textAlign:"center",padding:"52px 0"}}>
-                <div style={{width:72,height:72,borderRadius:24,background:C.card,
+                <div style={{width:72,height:72,borderRadius:24,background:C.bg,
                   display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",
-                  border:`1px solid ${C.bdr}`}}>
+                  border:`1.5px solid ${C.bdr}`}}>
                   <i className={hasFilter?"fa-solid fa-filter":"fa-regular fa-building"}
                     style={{fontSize:28,color:C.t3}}/>
                 </div>
@@ -1640,8 +1585,7 @@ export default function OwnerDashboardView() {
                   onEdit={r=>setEditRoom(r)}
                   onAddRoom={id=>setAddRoomBid(id)}
                   onInvite={r=>setInviteRoom(r)}
-                  onDeleteRoom={r=>setDeleteTarget({type:"room",id:r.id,roomNo:r.roomNo,tenantName:r.tenantName})}
-                  onDeleteBuilding={t=>setDeleteTarget(t)}
+                  onDelete={handleDelete}
                 />
               ))}
             </AnimatePresence>
@@ -1659,6 +1603,13 @@ export default function OwnerDashboardView() {
 
       {/* Sheets */}
       <AnimatePresence>
+        {deleteTarget&&(
+          <DeleteConfirmSheet key="del"
+            target={deleteTarget}
+            onClose={()=>setDeleteTarget(null)}
+            onConfirm={confirmDelete}
+          />
+        )}
         {addBldg&&<AddBuildingSheet key="ab" ownerId={authUser?.uid} onClose={()=>setAddBldg(false)} toast={toast}/>}
         {addRoomBid&&<AddRoomSheet key="ar" buildingId={addRoomBid} ownerId={authUser?.uid} onClose={()=>setAddRoomBid(null)} toast={toast}/>}
         {editRoom&&<EditRoomSheet key="er" room={editRoom} onClose={()=>setEditRoom(null)} toast={toast}/>}
@@ -1671,12 +1622,6 @@ export default function OwnerDashboardView() {
         {youOpen&&(
           <YouSheet key="you" ownerName={ownerName} authUser={authUser}
             onClose={()=>{setYouOpen(false);setTab("home");}} onAction={handleYou}/>
-        )}
-        {deleteTarget&&(
-          <ConfirmDeleteSheet key="del"
-            target={deleteTarget}
-            onConfirm={handleConfirmDelete}
-            onClose={()=>setDeleteTarget(null)}/>
         )}
       </AnimatePresence>
     </>
