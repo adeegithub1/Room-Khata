@@ -1329,9 +1329,21 @@ export default function OwnerDashboardView() {
   const [showRemind,    setShowRemind]    = useState(false);
   const [showTenants,   setShowTenants]   = useState(false);
   const [showPayments,  setShowPayments]  = useState(false);
-  const [deleteTarget,  setDeleteTarget]  = useState(null); // {type,id,name}
+  const [deleteTarget,  setDeleteTarget]  = useState(null);
 
-  // ── Delete handler ────────────────────────────────────────
+  const unsubR   = useRef(null);
+  const unsubB   = useRef(null);
+  const scrollRef= useRef(null);
+  const scrollY  = useMotionValue(0);
+
+  // ── Toast — must be declared before any callback that uses it ──
+  const toast = useCallback((msg, type="success") => {
+    const id = Date.now();
+    setToasts(p => [...p, {id, msg, type}]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  // ── Delete handlers ───────────────────────────────────────
   const handleDelete = useCallback((type, id, name) => {
     setDeleteTarget({ type, id, name });
   }, []);
@@ -1344,12 +1356,10 @@ export default function OwnerDashboardView() {
         await deleteDoc(doc(db, "rooms", id));
         toast("🗑️ Room deleted");
       } else if (type === "building") {
-        // Delete all rooms in this building first
         const roomSnap = await getDocs(
           query(collection(db, "rooms"), where("buildingId", "==", id))
         );
         await Promise.all(roomSnap.docs.map(d => deleteDoc(doc(db, "rooms", d.id))));
-        // Delete the building
         await deleteDoc(doc(db, "buildings", id));
         toast("🗑️ Building and all rooms deleted");
       }
@@ -1357,17 +1367,6 @@ export default function OwnerDashboardView() {
       toast(e.message, "error");
     }
   }, [deleteTarget, toast]);
-
-  const unsubR   = useRef(null);
-  const unsubB   = useRef(null);
-  const scrollRef= useRef(null);
-  const scrollY  = useMotionValue(0);
-
-  const toast = useCallback((msg,type="success")=>{
-    const id=Date.now();
-    setToasts(p=>[...p,{id,msg,type}]);
-    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3000);
-  },[]);
 
   /* Owner profile */
   useEffect(()=>{
@@ -1575,20 +1574,20 @@ export default function OwnerDashboardView() {
             )}
 
             {/* Building groups */}
-<AnimatePresence>
-  {!loading && grouped.map(([bid, bRooms]) => (
-    <BuildingGroup key={bid}
-      bid={bid}
-      name={bid === "no-building" ? "Uncategorized" : buildings[bid]?.name || "Building"}
-      rooms={bRooms}
-      onToggle={handleToggle}
-      onEdit={r => setEditRoom(r)}
-      onAddRoom={id => setAddRoomBid(id)}
-      onInvite={r => setInviteRoom(r)}
-      onDelete={handleDelete}
-    />
-  ))}
-</AnimatePresence>
+            <AnimatePresence>
+              {!loading&&grouped.map(([bid,bRooms])=>(
+                <BuildingGroup key={bid}
+                  bid={bid}
+                  name={bid==="no-building"?"Uncategorized":buildings[bid]?.name||"Building"}
+                  rooms={bRooms}
+                  onToggle={handleToggle}
+                  onEdit={r=>setEditRoom(r)}
+                  onAddRoom={id=>setAddRoomBid(id)}
+                  onInvite={r=>setInviteRoom(r)}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </AnimatePresence>
 
           </div>
         </div>
