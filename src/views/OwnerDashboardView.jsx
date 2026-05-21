@@ -361,7 +361,7 @@ const SC = {
 };
 
 /* ─── Room Card ──────────────────────────────────────────── */
-function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
+function RoomCard({ room, onToggle, onEdit, onInvite, onDelete, onAddBill, onAssign }) {
   const {roomNo,tenantName,rent=0,electricityBill=0,status="pending",balanceDue=0,securityDeposit=0} = room;
   const vacant = !tenantName?.trim();
   const cfg = SC[vacant?"vacant":(status||"pending")] || SC.pending;
@@ -446,9 +446,11 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
                 onPointerUp={e=>e.currentTarget.style.opacity="1"}>
                 ₹ {cfg.btnL}
               </button>
-              <button style={{width:"100%",padding:"8px",borderRadius:10,cursor:"pointer",
-                background:"#FEFCE8",color:"#CA8A04",fontWeight:700,fontSize:11,
-                border:"1px solid #FEF08A"}}>
+              {/* ⚡ Add Bill — now wired */}
+              <button onClick={()=>onAddBill(room)}
+                style={{width:"100%",padding:"8px",borderRadius:10,cursor:"pointer",
+                  background:"#FEFCE8",color:"#CA8A04",fontWeight:700,fontSize:11,
+                  border:"1px solid #FEF08A"}}>
                 ⚡ Add Bill
               </button>
             </>
@@ -456,11 +458,17 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
         </div>
       ) : (
         <div style={{display:"flex",gap:5}}>
-          <button style={{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
-            background:"#F5F3FF",color:C.indigo,fontWeight:700,fontSize:10}}>+ Assign</button>
+          {/* + Assign — now wired */}
+          <button onClick={()=>onAssign(room)}
+            style={{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
+              background:"#F5F3FF",color:C.indigo,fontWeight:700,fontSize:10}}>
+            + Assign
+          </button>
           <button onClick={()=>onInvite(room)}
             style={{flex:1,padding:"8px",borderRadius:10,border:"none",cursor:"pointer",
-              background:G.brand,color:"white",fontWeight:800,fontSize:10}}>🔗 Invite</button>
+              background:G.brand,color:"white",fontWeight:800,fontSize:10}}>
+            🔗 Invite
+          </button>
         </div>
       )}
     </motion.div>
@@ -468,7 +476,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete }) {
 }
 
 /* ─── Building Group ─────────────────────────────────────── */
-function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDelete }) {
+function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDelete, onAddBill, onAssign }) {
   const occ = rooms.filter(r=>r.tenantName?.trim()).length;
   return (
     <div style={{marginBottom:24}}>
@@ -519,7 +527,7 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
       {/* Room grid */}
       <motion.div variants={stagger(.04)} initial="hidden" animate="visible"
         style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
-        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite} onDelete={onDelete}/>)}
+        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite} onDelete={onDelete} onAddBill={onAddBill} onAssign={onAssign}/>)}
       </motion.div>
     </div>
   );
@@ -1255,6 +1263,221 @@ function InviteSheet({ room, onClose }) {
   );
 }
 
+/* ─── Add Bill Sheet ─────────────────────────────────────── */
+function AddBillSheet({ room, onClose, toast }) {
+  const [amount, setAmount] = useState(String(room.electricityBill || ""));
+  const [month,  setMonth]  = useState(
+    new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+  );
+  const [busy, setBusy] = useState(false);
+
+  const go = async e => {
+    e.preventDefault();
+    const bill = parseInt(amount, 10);
+    if (!bill || bill < 0) return;
+    setBusy(true);
+    try {
+      await updateDoc(doc(db, "rooms", room.id), {
+        electricityBill: bill,
+        lastBillMonth:   month,
+        // If room was paid, reset to pending so tenant pays new total
+        ...(room.status === "paid" ? { status: "pending", amountPaid: 0, balanceDue: (room.rent || 0) + bill } : {}),
+      });
+      toast(`⚡ Bill ₹${bill.toLocaleString("en-IN")} added for Room ${room.roomNo}`);
+      onClose();
+    } catch(e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  const currentTotal = (room.rent || 0) + (parseInt(amount, 10) || 0);
+
+  return (
+    <Sheet onClose={onClose} title={`⚡ Electricity Bill — Room ${room.roomNo}`}>
+      <form onSubmit={go}>
+        {/* Tenant info */}
+        <div style={{background:"linear-gradient(135deg,#1E1B4B,#2A1860)",
+          borderRadius:16,padding:"14px 16px",marginBottom:16,
+          display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:42,height:42,borderRadius:13,background:G.violet,flexShrink:0,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            color:"white",fontWeight:900,fontSize:15}}>
+            {init(room.tenantName)}
+          </div>
+          <div>
+            <p style={{fontSize:14,fontWeight:800,color:"white"}}>{room.tenantName}</p>
+            <p style={{fontSize:11,color:"rgba(255,255,255,.45)"}}>Room {room.roomNo} · Rent {inr(room.rent)}</p>
+          </div>
+        </div>
+
+        <SInput label="Electricity Bill Amount (₹)" type="number"
+          value={amount} onChange={setAmount}
+          placeholder="e.g. 850" required min="1"/>
+
+        <SInput label="Billing Month"
+          value={month} onChange={setMonth}
+          placeholder="e.g. June 2025"/>
+
+        {/* Live total preview */}
+        {parseInt(amount,10) > 0 && (
+          <div style={{background:"#FEFCE8",border:"1.5px solid #FEF08A",borderRadius:14,
+            padding:"12px 16px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <p style={{fontSize:11,color:"#92400E",fontWeight:600}}>New Total Due</p>
+              <p style={{fontSize:11,color:"#CA8A04"}}>
+                Rent {inr(room.rent)} + ⚡ {inr(parseInt(amount,10)||0)}
+              </p>
+            </div>
+            <p style={{fontSize:22,fontWeight:900,color:"#CA8A04",
+              fontFamily:"'JetBrains Mono',monospace"}}>{inr(currentTotal)}</p>
+          </div>
+        )}
+
+        {room.status === "paid" && (
+          <div style={{background:"#FEF3C7",border:"1.5px solid #FDE68A",borderRadius:12,
+            padding:"10px 14px",marginBottom:14}}>
+            <p style={{fontSize:12,color:"#92400E",fontWeight:600}}>
+              ⚠️ Room की status "Paid" है — bill add करने पर status वापस "Pending" हो जाएगी।
+            </p>
+          </div>
+        )}
+
+        <SBtn loading={busy} label="⚡ Bill Save करें" grad="linear-gradient(135deg,#F59E0B,#D97706)"/>
+        <div style={{height:8}}/>
+      </form>
+    </Sheet>
+  );
+}
+
+/* ─── Assign Tenant Sheet (offline/manual assignment) ────── */
+function AssignTenantSheet({ room, onClose, toast }) {
+  const [name,    setName]    = useState("");
+  const [phone,   setPhone]   = useState("");
+  const [rent,    setRent]    = useState(String(room.rent || ""));
+  const [deposit, setDeposit] = useState(String(room.securityDeposit || ""));
+  const [busy,    setBusy]    = useState(false);
+  const [err,     setErr]     = useState("");
+
+  const go = async e => {
+    e.preventDefault();
+    setErr("");
+    if (!name.trim())         { setErr("Tenant का नाम जरूरी है।"); return; }
+    if (phone && phone.length !== 10) { setErr("Phone 10 digits का होना चाहिए।"); return; }
+    setBusy(true);
+    try {
+      await updateDoc(doc(db, "rooms", room.id), {
+        tenantName:      name.trim(),
+        tenantPhone:     phone.trim() || "",
+        rent:            parseInt(rent,   10) || 0,
+        securityDeposit: parseInt(deposit,10) || 0,
+        status:          "pending",
+        // Clear any previous tenant link since this is an offline assignment
+        tenantUid:       "",
+        amountPaid:      0,
+        balanceDue:      parseInt(rent,10) || 0,
+        assignedAt:      new Date().toISOString(),
+      });
+      toast(`✓ ${name.trim()} को Room ${room.roomNo} में assign किया!`);
+      onClose();
+    } catch(e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  return (
+    <Sheet onClose={onClose} title={`🏠 Assign Tenant — Room ${room.roomNo}`}>
+      <form onSubmit={go}>
+        {/* Room info */}
+        <div style={{background:C.bg,border:`1.5px solid ${C.bdr}`,borderRadius:14,
+          padding:"12px 14px",marginBottom:16,
+          display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:38,height:38,borderRadius:11,
+            background:"linear-gradient(135deg,#CBD5E1,#94A3B8)",flexShrink:0,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <i className="fa-solid fa-door-open" style={{fontSize:16,color:"white",opacity:.7}}/>
+          </div>
+          <div>
+            <p style={{fontSize:13,fontWeight:800,color:C.t1}}>Room {room.roomNo}</p>
+            <p style={{fontSize:11,color:C.t3}}>Currently Vacant</p>
+          </div>
+        </div>
+
+        <SInput label="Tenant का नाम *" value={name} onChange={setName}
+          placeholder="Ravi Kumar" required/>
+
+        <div style={{marginBottom:14}}>
+          <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
+            textTransform:"uppercase",letterSpacing:".08em",marginBottom:5}}>
+            WhatsApp Number (optional)
+          </label>
+          <div style={{position:"relative"}}>
+            <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
+              fontSize:14,fontWeight:700,color:C.brand,pointerEvents:"none"}}>+91</span>
+            <input type="tel" value={phone}
+              onChange={e=>setPhone(e.target.value.replace(/\D/g,"").slice(0,10))}
+              placeholder="10-digit number"
+              style={{width:"100%",padding:"13px 14px 13px 48px",borderRadius:13,
+                fontSize:15,fontWeight:500,outline:"none",color:C.t1,
+                fontFamily:"'Poppins',sans-serif",background:"#F5F3FF",
+                border:`1.5px solid ${C.bdr}`,transition:"all .2s"}}
+              onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.background="#fff";}}
+              onBlur={e=>{e.target.style.borderColor=C.bdr;e.target.style.background="#F5F3FF";}}/>
+          </div>
+          <p style={{fontSize:11,color:C.t3,marginTop:4}}>
+            Number देने पर tenant को WhatsApp reminder भेज सकते हैं।
+          </p>
+        </div>
+
+        <SInput label="Monthly Rent (₹) *" type="number"
+          value={rent} onChange={setRent}
+          placeholder="8000" required min="1"/>
+
+        <SInput label="Security Deposit (₹)" type="number"
+          value={deposit} onChange={setDeposit}
+          placeholder="16000" min="0"/>
+
+        {/* Summary preview */}
+        {name.trim() && parseInt(rent,10) > 0 && (
+          <div style={{background:"#F0FDF4",border:"1.5px solid #86EFAC",borderRadius:14,
+            padding:"12px 16px",marginBottom:14}}>
+            <p style={{fontSize:12,fontWeight:700,color:"#14532D",marginBottom:6}}>Assignment Summary</p>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+              <span style={{fontSize:12,color:"#166534"}}>Tenant</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#14532D"}}>{name.trim()}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+              <span style={{fontSize:12,color:"#166534"}}>Monthly Rent</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#14532D"}}>{inr(parseInt(rent,10)||0)}</span>
+            </div>
+            {parseInt(deposit,10) > 0 && (
+              <div style={{display:"flex",justifyContent:"space-between"}}>
+                <span style={{fontSize:12,color:"#166534"}}>Security Deposit</span>
+                <span style={{fontSize:12,fontWeight:700,color:"#14532D"}}>{inr(parseInt(deposit,10))}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {err && (
+          <div style={{background:"#FEE2E2",color:"#991B1B",border:"1.5px solid #FECACA",
+            borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:600,marginBottom:12}}>
+            {err}
+          </div>
+        )}
+
+        <SBtn loading={busy} label="✓ Tenant Assign करें" grad={G.emerald}/>
+
+        <div style={{background:C.bg,border:`1.5px solid ${C.bdr}`,borderRadius:12,
+          padding:"10px 14px",marginTop:12}}>
+          <p style={{fontSize:11,color:C.t2,lineHeight:1.5}}>
+            💡 अगर tenant app use करना चाहे तो बाद में <strong>🔗 Invite</strong> button से
+            Connection Code share करें — वो उससे login करके connect हो जाएगा।
+          </p>
+        </div>
+        <div style={{height:8}}/>
+      </form>
+    </Sheet>
+  );
+}
+
 /* ─── Delete Confirm Sheet ───────────────────────────────── */
 function DeleteConfirmSheet({ target, onClose, onConfirm }) {
   const [busy, setBusy] = useState(false);
@@ -1324,6 +1547,8 @@ export default function OwnerDashboardView() {
   const [editRoom,   setEditRoom]   = useState(null);
   const [youOpen,    setYouOpen]    = useState(false);
   const [inviteRoom, setInviteRoom] = useState(null);
+  const [addBillRoom,  setAddBillRoom]  = useState(null);
+  const [assignRoom,   setAssignRoom]   = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showExpenses,  setShowExpenses]  = useState(false);
   const [showRemind,    setShowRemind]    = useState(false);
@@ -1585,6 +1810,8 @@ export default function OwnerDashboardView() {
                   onAddRoom={id=>setAddRoomBid(id)}
                   onInvite={r=>setInviteRoom(r)}
                   onDelete={handleDelete}
+                  onAddBill={r=>setAddBillRoom(r)}
+                  onAssign={r=>setAssignRoom(r)}
                 />
               ))}
             </AnimatePresence>
@@ -1602,6 +1829,8 @@ export default function OwnerDashboardView() {
 
       {/* Sheets */}
       <AnimatePresence>
+        {addBillRoom&&<AddBillSheet key="bill" room={addBillRoom} onClose={()=>setAddBillRoom(null)} toast={toast}/>}
+        {assignRoom&&<AssignTenantSheet key="assign" room={assignRoom} onClose={()=>setAssignRoom(null)} toast={toast}/>}
         {deleteTarget&&(
           <DeleteConfirmSheet key="del"
             target={deleteTarget}
