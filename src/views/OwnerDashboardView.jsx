@@ -2218,24 +2218,25 @@ export default function OwnerDashboardView() {
               </motion.div>
             )}
 
-            {/* Building groups — no AnimatePresence wrapper here intentionally.
-                AnimatePresence on a list that can fully empty causes a freeze when
-                onSnapshot fires mid-unmount. Plain render is instant and safe. */}
-            {!loading&&grouped.map(([bid,bRooms])=>(
-              <BuildingGroup key={bid}
-                bid={bid}
-                name={bid==="no-building"?"Uncategorized":buildings[bid]?.name||"Building"}
-                rooms={bRooms}
-                onToggle={handleToggle}
-                onEdit={r=>setEditRoom(r)}
-                onAddRoom={id=>setAddRoomBid(id)}
-                onInvite={r=>setInviteRoom(r)}
-                onDelete={handleDelete}
-                onAddBill={r=>setAddBillRoom(r)}
-                onAssign={r=>setAssignRoom(r)}
-                onViewDetail={r=>setViewRoom(r)}
-              />
-            ))}
+            {/* Building groups - no AnimatePresence wrapper here intentionally.
+            AnimatePresence on a list that can fully empty causes a freeze when
+            onSnapshot fires mid-unmount. Plain render is instant and safe. */}
+        {!loading&&grouped.map(([bid,bRooms])=>(
+          <BuildingGroup key={bid}
+            bid={bid}
+            name={bid==="no-building"?"Uncategorized":buildings[bid]?.name||"Building"}
+            rooms={bRooms}
+            onToggle={handleToggle}
+            onEdit={r=>setEditRoom(r)}
+            onAddRoom={id=>setAddRoomBid(id)}
+            onInvite={r=>setInviteRoom(r)}
+            onDelete={handleDelete}
+            onAddBill={r=>setAddBillRoom(r)}
+            onAssign={r=>setAssignRoom(r)}
+            onViewDetail={r=>setViewRoom(r)}
+            onVerify={handleVerify} 
+          />
+        ))}
 
           </div>
         </div>
