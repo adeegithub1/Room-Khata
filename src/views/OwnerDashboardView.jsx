@@ -2247,8 +2247,8 @@ export default function OwnerDashboardView() {
       </div>
 
       {/* Toasts */}
-      <Toasts list={toasts} dismiss={useCallback(id=>setToasts(p=>p.filter(t=>t.id!==id)),[])}/>
-
+<Toasts list={toasts} dismiss={(id) => setToasts(p => p.filter(t => t.id !== id))} />
+      
       {/* Sheets */}
       <AnimatePresence>
         {viewRoom&&<RoomDetailSheet key="rd"
