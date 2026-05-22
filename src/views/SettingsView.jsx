@@ -126,27 +126,38 @@ function EditProfileModal({ profile, profileDocId, onClose, onSaved }) {
   const [name,    setName]    = useState(profile.name    || "");
   const [address, setAddress] = useState(profile.address || "");
   const [upiId,   setUpiId]   = useState(profile.upiId   || "");
+  const [photo,   setPhoto]   = useState(profile.photo   || "");
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
+  const pickPhoto = () => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    inp.onchange = e => {
+      const file = e.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => setPhoto(ev.target.result);
+      reader.readAsDataURL(file);
+    };
+    inp.click();
+  };
+
   const handleSave = async () => {
     if (!name.trim()) { setError("Name is required."); return; }
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       await updateDoc(doc(db, "ownerProfiles", profileDocId), {
-        name: name.trim(),
-        address: address.trim(),
-        upiId: upiId.trim(),
+        name: name.trim(), address: address.trim(),
+        upiId: upiId.trim(), photo,
       });
-      onSaved({ name: name.trim(), address: address.trim(), upiId: upiId.trim() });
+      onSaved({ name: name.trim(), address: address.trim(), upiId: upiId.trim(), photo });
       onClose();
     } catch (e) {
       setError(e.message || "Update failed.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
+
+  const init2 = n => n?.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
 
   return (
     <motion.div
@@ -156,7 +167,7 @@ function EditProfileModal({ profile, profileDocId, onClose, onSaved }) {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <motion.div
         className="relative z-10 bg-white w-full rounded-t-3xl px-6 pt-5 pb-10"
-        style={{ maxWidth: 480, border: "1.5px solid var(--border)" }}
+        style={{ maxWidth: 480, border: "1.5px solid var(--border)", maxHeight:"90dvh", overflowY:"auto" }}
         initial={{ y: "100%" }}
         animate={{ y: 0, transition: { duration: 0.4, ease } }}
         exit={{ y: "100%", transition: { duration: 0.28 } }}
@@ -164,30 +175,44 @@ function EditProfileModal({ profile, profileDocId, onClose, onSaved }) {
         <div className="w-12 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--border)" }} />
         <h3 className="text-xl font-black mb-5" style={{ color: "var(--indigo)" }}>Edit Profile</h3>
 
+        {/* Photo picker */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:20}}>
+          <div onClick={pickPhoto}
+            style={{width:84,height:84,borderRadius:26,cursor:"pointer",overflow:"hidden",
+              background: photo ? "transparent" : "linear-gradient(135deg,#FF6B35,#F5A623)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              border:"3px solid #EDE9FE",marginBottom:8,position:"relative"}}>
+            {photo
+              ? <img src={photo} alt="profile" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              : <span style={{color:"white",fontWeight:900,fontSize:26}}>{init2(name||"O")}</span>}
+            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.35)",
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <i className="fa-solid fa-camera" style={{color:"white",fontSize:20}}/>
+            </div>
+          </div>
+          <button type="button" onClick={pickPhoto}
+            style={{fontSize:12,fontWeight:700,color:"#4158D0",background:"none",border:"none",cursor:"pointer"}}>
+            <i className="fa-solid fa-camera" style={{marginRight:5}}/>Tap to change photo
+          </button>
+        </div>
+
         <div className="space-y-4">
           {[
-            { label: "Full Name",      val: name,    set: setName,    placeholder: "Ramesh Sharma", req: true },
-            { label: "Property Address", val: address, set: setAddress, placeholder: "Building address…"       },
-            { label: "UPI ID",         val: upiId,   set: setUpiId,   placeholder: "yourname@upi"             },
+            { label: "Full Name",        val: name,    set: setName,    placeholder: "Ramesh Sharma", req: true },
+            { label: "Property Address", val: address, set: setAddress, placeholder: "Building address…" },
+            { label: "UPI ID",           val: upiId,   set: setUpiId,   placeholder: "yourname@upi" },
           ].map((f) => (
             <div key={f.label}>
               <label className="block text-xs font-bold mb-1.5" style={{ color: "var(--indigo)" }}>
                 {f.label}{f.req ? " *" : ""}
               </label>
-              <input
-                type="text"
-                value={f.val}
-                onChange={(e) => f.set(e.target.value)}
+              <input type="text" value={f.val} onChange={(e) => f.set(e.target.value)}
                 placeholder={f.placeholder}
                 className="w-full px-4 py-3 rounded-2xl font-medium text-sm outline-none transition-all"
-                style={{
-                  background: "var(--surface2)",
-                  border: "1.5px solid var(--border)",
-                  fontFamily: "'Poppins', sans-serif",
-                  color: "var(--text-primary)",
-                }}
-                onFocus={(e) => { e.target.style.borderColor = "var(--saffron)"; e.target.style.background = "#fff"; e.target.style.boxShadow = "0 0 0 3px rgba(255,102,0,.09)"; }}
-                onBlur={(e)  => { e.target.style.borderColor = "var(--border)";  e.target.style.background = "var(--surface2)"; e.target.style.boxShadow = "none"; }}
+                style={{ background:"var(--surface2)", border:"1.5px solid var(--border)",
+                  fontFamily:"'Poppins',sans-serif", color:"var(--text-primary)" }}
+                onFocus={(e) => { e.target.style.borderColor="var(--saffron)"; e.target.style.background="#fff"; }}
+                onBlur={(e)  => { e.target.style.borderColor="var(--border)";  e.target.style.background="var(--surface2)"; }}
               />
             </div>
           ))}
@@ -227,7 +252,7 @@ export default function SettingsView() {
   const { authUser, setUserRole, language, setLanguage } = useApp();
   const navigate = useNavigate();
 
-  const [profile,      setProfile]      = useState({ name: "", address: "", upiId: "" });
+  const [profile,      setProfile]      = useState({ name: "", address: "", upiId: "", photo: "" });
   const [profileDocId, setProfileDocId] = useState(null);
   const [editOpen,     setEditOpen]     = useState(false);
   const [loading,      setLoading]      = useState(true);
@@ -249,7 +274,7 @@ export default function SettingsView() {
         if (!snap.empty) {
           setProfileDocId(snap.docs[0].id);
           const d = snap.docs[0].data();
-          setProfile({ name: d.name || "", address: d.address || "", upiId: d.upiId || "" });
+          setProfile({ name: d.name || "", address: d.address || "", upiId: d.upiId || "", photo: d.photo || "" });
         }
       } catch { /* silent */ }
       finally { setLoading(false); }
@@ -316,12 +341,14 @@ export default function SettingsView() {
                 backdropFilter: "blur(16px)",
               }}
             >
-              {/* Avatar */}
+              {/* Avatar — shows photo if available */}
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-lg"
-                style={{ background: "linear-gradient(135deg,#FF6600,#F59E0B)", fontSize: 18 }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-lg overflow-hidden"
+                style={{ background: "linear-gradient(135deg,#FF6600,#F59E0B)", fontSize: 18, flexShrink: 0 }}
               >
-                {initials}
+                {profile.photo
+                  ? <img src={profile.photo} alt={displayName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  : initials}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-black text-white truncate text-base">{displayName}</p>
