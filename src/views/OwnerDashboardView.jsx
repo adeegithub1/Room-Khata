@@ -1508,16 +1508,20 @@ function DeleteConfirmSheet({ target, onClose, onConfirm }) {
               cursor:"pointer",background:"#F5F3FF",color:"#6B7280",fontWeight:700,fontSize:15}}>
             Cancel
           </button>
-          <button onClick={async()=>{
+          <button
+            disabled={busy}
+            onClick={async () => {
               setBusy(true);
-              await onConfirm();
-              setBusy(false);
+              // Close FIRST — before the Firestore delete fires.
+              // This prevents a freeze when onSnapshot updates rooms/buildings
+              // while this sheet is still mounted, causing AnimatePresence conflicts.
               onClose();
-            }} disabled={busy}
+              await onConfirm();
+            }}
             style={{flex:1,padding:"14px",borderRadius:14,border:"none",cursor:"pointer",
               background:"linear-gradient(135deg,#E11D48,#9F1239)",color:"white",
               fontWeight:900,fontSize:15,opacity:busy?.6:1}}>
-            {busy?"Deleting…":"हाँ, Delete करो"}
+            {busy ? "Deleting…" : "हाँ, Delete करो"}
           </button>
         </div>
         <div style={{height:8}}/>
@@ -1798,23 +1802,23 @@ export default function OwnerDashboardView() {
               </motion.div>
             )}
 
-            {/* Building groups */}
-            <AnimatePresence>
-              {!loading&&grouped.map(([bid,bRooms])=>(
-                <BuildingGroup key={bid}
-                  bid={bid}
-                  name={bid==="no-building"?"Uncategorized":buildings[bid]?.name||"Building"}
-                  rooms={bRooms}
-                  onToggle={handleToggle}
-                  onEdit={r=>setEditRoom(r)}
-                  onAddRoom={id=>setAddRoomBid(id)}
-                  onInvite={r=>setInviteRoom(r)}
-                  onDelete={handleDelete}
-                  onAddBill={r=>setAddBillRoom(r)}
-                  onAssign={r=>setAssignRoom(r)}
-                />
-              ))}
-            </AnimatePresence>
+            {/* Building groups — no AnimatePresence wrapper here intentionally.
+                AnimatePresence on a list that can fully empty causes a freeze when
+                onSnapshot fires mid-unmount. Plain render is instant and safe. */}
+            {!loading&&grouped.map(([bid,bRooms])=>(
+              <BuildingGroup key={bid}
+                bid={bid}
+                name={bid==="no-building"?"Uncategorized":buildings[bid]?.name||"Building"}
+                rooms={bRooms}
+                onToggle={handleToggle}
+                onEdit={r=>setEditRoom(r)}
+                onAddRoom={id=>setAddRoomBid(id)}
+                onInvite={r=>setInviteRoom(r)}
+                onDelete={handleDelete}
+                onAddBill={r=>setAddBillRoom(r)}
+                onAssign={r=>setAssignRoom(r)}
+              />
+            ))}
 
           </div>
         </div>
