@@ -491,7 +491,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete, onAddBill, onAss
 }
 
 /* ─── Building Group ─────────────────────────────────────── */
-function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDelete, onAddBill, onAssign, onViewDetail }) {
+function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite, onDelete, onVerify }) {
   const occ = rooms.filter(r=>r.tenantName?.trim()).length;
   return (
     <div style={{marginBottom:24}}>
@@ -542,7 +542,7 @@ function BuildingGroup({ bid, name, rooms, onToggle, onEdit, onAddRoom, onInvite
       {/* Room grid */}
       <motion.div variants={stagger(.04)} initial="hidden" animate="visible"
         style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
-        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite} onDelete={onDelete} onAddBill={onAddBill} onAssign={onAssign} onViewDetail={onViewDetail}/>)}
+        {rooms.map(r=><RoomCard key={r.id} room={r} onToggle={onToggle} onEdit={onEdit} onInvite={onInvite} onDelete={onDelete} onVerify={onVerify}/>)}
       </motion.div>
     </div>
   );
