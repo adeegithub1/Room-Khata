@@ -2236,7 +2236,7 @@ export default function OwnerDashboardView() {
             onViewDetail={r=>setViewRoom(r)}
             onVerify={handleVerify} 
           />
-        ))}
+        )}
 
           </div>
         </div>
