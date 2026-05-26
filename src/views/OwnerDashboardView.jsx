@@ -374,11 +374,7 @@ const SC = {
 };
 
 /* ─── Room Card ──────────────────────────────────────────── */
-function RoomCard({ room, onToggle, onEdit, onInvite, onDelete, onAddBill, onAssign, onViewDetail }) {
-  const {roomNo,tenantName,rent=0,electricityBill=0,status="pending",balanceDue=0,securityDeposit=0} = room;
-  const vacant = !tenantName?.trim();
-  const cfg = SC[vacant?"vacant":(status||"pending")] || SC.pending;
-  const total = rent+(electricityBill||0);
+
 
   // Status badge config matching reference UI
   const badge = vacant
