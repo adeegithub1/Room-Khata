@@ -374,7 +374,11 @@ const SC = {
 };
 
 /* ─── Room Card ──────────────────────────────────────────── */
-
+function RoomCard({ room, onToggle, onEdit, onInvite, onDelete, onAddBill, onAssign, onViewDetail }) {
+  const {roomNo,tenantName,rent=0,electricityBill=0,status="pending",balanceDue=0,securityDeposit=0} = room;
+  const vacant = !tenantName?.trim();
+  const cfg = SC[vacant?"vacant":(status||"pending")] || SC.pending;
+  const total = rent+(electricityBill||0);
 
   // Status badge config matching reference UI
   const badge = vacant
@@ -803,10 +807,6 @@ function Header({ ownerName, rooms, loading, scrollY }) {
     </header>
   );
 }
-  const rev  = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
-  const pend = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
-  const exp  = useMemo(()=>rooms.filter(r=>r.tenantName?.trim()).reduce((s,r)=>s+(r.rent||0),0),[rooms]);
-  const pct  = exp>0?Math.round(rev/exp*100):0;
 /* ─── Quick action tiles ─────────────────────────────────── */
 function QuickTiles({ onAnalytics, onExpenses, onRemind }) {
   const tiles = [
@@ -2274,7 +2274,7 @@ export default function OwnerDashboardView() {
       </div>
 
       {/* Toasts */}
-          <Toasts list={toasts} dismiss={(id) => setToasts(p => p.filter(t => t.id !== id))} />
+      <Toasts list={toasts} dismiss={useCallback(id=>setToasts(p=>p.filter(t=>t.id!==id)),[])}/>
 
       {/* Sheets */}
       <AnimatePresence>
