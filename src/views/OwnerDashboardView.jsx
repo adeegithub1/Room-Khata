@@ -12,23 +12,15 @@ import { useApp } from "../context/AppContext";
 
 /* ─── Brand tokens — from reference UI ──────────────────── */
 const C = {
-  // Primary indigo
   ind:    "#6366F1",  ind2:   "#4F46E5",  indLight:"#EEF2FF",  indBorder:"#C7D2FE",
-  // Teal secondary
   teal:   "#0F9D8B",  tealLight:"#CCFBF1",
-  // Amber
   amb:    "#F59E0B",  ambLight:"#FEF3C7",
-  // Danger
   red:    "#EF4444",  redLight:"#FEE2E2",
-  // Neutrals
   dark:   "#1A1A2E",  dark2:"#18181B",
   t1:     "#18181B",  t2:"#71717A",    t3:"#A1A1AA",
   bg:     "#F7F7FB",  card:"#FFFFFF",  bdr:"#F1F0F7",  bdr2:"#F4F4F5",
-  // Indigo alias for sheets
   vi:     "#6366F1",  vi2: "#818CF8",
-  // Keep brand for backwards compat
   brand:  "#6366F1",  brand2:"#818CF8",
-  // emerald for success
   em:     "#10B981",
 };
 const G = {
@@ -377,7 +369,6 @@ const SC = {
 function RoomCard({ room, onToggle, onEdit, onInvite, onDelete, onAddBill, onAssign, onViewDetail }) {
   const {roomNo,tenantName,rent=0,electricityBill=0,status="pending",balanceDue=0,securityDeposit=0} = room;
   const vacant = !tenantName?.trim();
-  const cfg = SC[vacant?"vacant":(status||"pending")] || SC.pending;
   const total = rent+(electricityBill||0);
 
   // Status badge config matching reference UI
@@ -391,7 +382,7 @@ function RoomCard({ room, onToggle, onEdit, onInvite, onDelete, onAddBill, onAss
     ? {text:"Partial",    bg:"#DBEAFE", color:"#1D4ED8"}
     :  {text:"Pending",   bg:"#FEF3C7", color:"#B45309"};
 
-  // Avatar bg per status (matches reference)
+  // Avatar bg per status
   const avBg = vacant    ? "#F4F4F5"
     : status==="paid"    ? "#EEF2FF"
     : status==="partial" ? "#DBEAFE"
@@ -661,8 +652,7 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
   );
 }
 
-
-/* ─── Finance Header ─────────────────────────────────────── */
+/* ─── BUTTERY SMOOTH CSS STICKY HEADER ───────────────────── */
 function Header({ ownerName, rooms, loading, scrollY }) {
   const rev      = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
   const pend     = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
@@ -670,151 +660,126 @@ function Header({ ownerName, rooms, loading, scrollY }) {
   const occupied = rooms.filter(r=>r.tenantName?.trim()).length;
   const [g]      = greet();
 
-  // ── Scroll transforms ─────────────────────────────────────
-  // CS→CE: content fades + slides up
-  // CE→CE: maxHeight collapses so header physically shrinks
-  const CS = 10, CE = 90;
-
-  // Visual: opacity + slight upward move (GPU only — no layout)
+  // Scroll transforms (GPU ONLY - No layout thrashing)
+  const CS = 20, CE = 70;
   const exOp  = useTransform(scrollY, [CS, CE],  [1, 0]);
-  const exY   = useTransform(scrollY, [CS, CE],  [0, -8]);
-  const miOp  = useTransform(scrollY, [CS+15, CE], [0, 1]);
-
-  // Layout: maxHeight drives actual space collapse (safe — fixed px range)
-  // greeting + search + pill section ≈ 120px
-  const greetMax = useTransform(scrollY, [CS, CE], ["130px", "0px"]);
-  // KPI grid ≈ 220px total with padding
-  const kpiMax   = useTransform(scrollY, [CS, CE], ["240px", "0px"]);
-  const kpiPadT  = useTransform(scrollY, [CS, CE], ["14px",  "0px"]);
-  const kpiPadB  = useTransform(scrollY, [CS, CE], ["18px",  "0px"]);
+  const exY   = useTransform(scrollY, [CS, CE],  [0, -10]);
+  const miOp  = useTransform(scrollY, [CS, CE],  [0, 1]);
 
   return (
-    <header style={{
-      background: C.dark, flexShrink:0, position:"relative", overflow:"hidden",
-      paddingTop:"max(44px,env(safe-area-inset-top))",
-      transform:"translateZ(0)", willChange:"transform",
-    }}>
-      {/* Orbs */}
+    <header style={{background: C.dark, position:"relative"}}>
+      {/* Background Orbs (Absolute to header) */}
       <div style={{position:"absolute",width:180,height:180,borderRadius:"50%",
         background:"rgba(99,102,241,.18)",top:-60,right:-50,pointerEvents:"none"}}/>
       <div style={{position:"absolute",width:100,height:100,borderRadius:"50%",
-        background:"rgba(99,102,241,.1)",bottom:-30,left:-20,pointerEvents:"none"}}/>
+        background:"rgba(99,102,241,.1)",bottom:0,left:-20,pointerEvents:"none"}}/>
 
-      <div style={{position:"relative",zIndex:1,padding:"12px 16px 0"}}>
-
-        {/* ── Always-visible top bar ── */}
-        <div style={{display:"flex",alignItems:"center",
-          justifyContent:"space-between",marginBottom:12}}>
-
-          {/* Left: expanded label / collapsed mini name */}
-          <div style={{flex:1,minWidth:0,marginRight:12,position:"relative",height:38}}>
-            <motion.div style={{opacity:exOp,y:exY,
-              position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
-              <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:500,marginBottom:2}}>
-                Your property
+      {/* ── STICKY TOP BAR ── */}
+      <div style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        background: C.dark, // Solid background prevents overlap visibility
+        paddingTop: "max(44px, env(safe-area-inset-top))",
+        paddingLeft: 16,
+        paddingRight: 16,
+        paddingBottom: 12,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        {/* Left: expanded label / collapsed mini name */}
+        <div style={{flex:1,minWidth:0,marginRight:12,position:"relative",height:38}}>
+          <motion.div style={{opacity:exOp,y:exY,
+            position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
+            <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:500,marginBottom:2}}>
+              Your property
+            </p>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <i className="fa-solid fa-map-pin" style={{fontSize:12,color:C.vi2}}/>
+              <p style={{fontSize:14,fontWeight:700,color:"white"}}>
+                {ownerName ? `${ownerName.split(" ")[0]}'s Properties` : "Properties"}
               </p>
-              <div style={{display:"flex",alignItems:"center",gap:4}}>
-                <i className="fa-solid fa-map-pin" style={{fontSize:12,color:C.vi2}}/>
-                <p style={{fontSize:14,fontWeight:700,color:"white"}}>
-                  {ownerName ? `${ownerName.split(" ")[0]}'s Properties` : "Properties"}
-                </p>
-              </div>
-            </motion.div>
-            <motion.div style={{opacity:miOp,
-              position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
-              <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1}}>
-                {ownerName?.split(" ")[0]||"Dashboard"}
-              </p>
-              <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:600,marginTop:2}}>
-                {inr(rev)} · {occupied}/{total} occupied
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Right: bell + avatar */}
-          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            <Bell rooms={rooms}/>
-            <div style={{width:38,height:38,borderRadius:13,background:C.ind,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontWeight:800,fontSize:13,color:"white",position:"relative"}}>
-              {ownerName ? ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase() : "RK"}
-              <div style={{position:"absolute",inset:-2,borderRadius:15,
-                border:`1.5px solid ${C.vi2}`,opacity:.45,pointerEvents:"none"}}/>
             </div>
-          </div>
+          </motion.div>
+
+          <motion.div style={{opacity:miOp,
+            position:"absolute",top:0,left:0,willChange:"opacity"}}>
+            <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1}}>
+              {ownerName?.split(" ")[0]||"Dashboard"}
+            </p>
+            <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:600,marginTop:2}}>
+              {inr(rev)} · {occupied}/{total} occupied
+            </p>
+          </motion.div>
         </div>
 
-        {/* ── Collapsing: greeting + search bar ──
-            maxHeight drives layout collapse; overflow:hidden clips content cleanly */}
-        <motion.div style={{
-          opacity: exOp,
-          y:       exY,
-          maxHeight: greetMax,
-          overflow: "hidden",
-          willChange: "opacity,transform,max-height",
-        }}>
-          <p style={{fontSize:13,color:"rgba(255,255,255,.55)",fontWeight:500,marginBottom:2}}>
-            Good {g},
-          </p>
-          <p style={{fontFamily:"'Nunito',sans-serif",fontSize:22,fontWeight:900,
-            color:"white",lineHeight:1.1,marginBottom:12}}>
-            {ownerName?.split(" ")[0]||"Owner"} <span style={{color:C.vi2}}>👋</span>
-          </p>
-          <div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
-            borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:9,
-            marginBottom:12}}>
-            <i className="fa-solid fa-magnifying-glass"
-              style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
-            <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
-              Search rooms, tenants…
-            </span>
+        {/* Right: bell + avatar */}
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <Bell rooms={rooms}/>
+          <div style={{width:38,height:38,borderRadius:13,background:C.ind,
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontWeight:800,fontSize:13,color:"white",position:"relative"}}>
+            {ownerName ? ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase() : "RK"}
+            <div style={{position:"absolute",inset:-2,borderRadius:15,
+              border:`1.5px solid ${C.vi2}`,opacity:.45,pointerEvents:"none"}}/>
           </div>
-        </motion.div>
-
+        </div>
       </div>
 
-      {/* ── KPI cards — also collapses on scroll ── */}
-      <motion.div style={{
-        opacity:   exOp,
-        maxHeight: kpiMax,
-        paddingTop:    kpiPadT,
-        paddingBottom: kpiPadB,
-        paddingLeft:  "14px",
-        paddingRight: "14px",
-        overflow: "hidden",
-        display:  "grid",
-        gridTemplateColumns: "repeat(2,1fr)",
-        gap: 10,
-        willChange: "opacity,max-height",
-      }}>
-        {[
-          {label:"Total Rooms", val:total,    sub:`${total-occupied} vacant`,                                                  bg:"#6366F1", icon:"fa-solid fa-building"},
-          {label:"Tenants",     val:occupied, sub:`${rooms.filter(r=>r.status==="paid").length} paid`,                         bg:"#0F9D8B", icon:"fa-solid fa-users"},
-          {label:"Collected",   val:inr(rev), sub:"This month",                                                                bg:"#F59E0B", icon:"fa-solid fa-indian-rupee-sign", mono:true},
-          {label:"Dues Left",   val:inr(pend),sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} tenants`, bg:"#EF4444", icon:"fa-solid fa-clock", mono:true},
-        ].map(k=>(
-          <div key={k.label} style={{borderRadius:18,padding:"14px",position:"relative",
-            overflow:"hidden",background:k.bg,minHeight:90}}>
-            <div style={{position:"absolute",right:10,top:10,width:34,height:34,borderRadius:11,
-              background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <i className={k.icon} style={{fontSize:15,color:"rgba(255,255,255,.9)"}}/>
-            </div>
-            <div style={{position:"absolute",width:65,height:65,borderRadius:"50%",
-              background:"rgba(255,255,255,.07)",bottom:-18,left:-10}}/>
-            <p style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.7)",
-              textTransform:"uppercase",letterSpacing:".3px",marginBottom:6}}>{k.label}</p>
-            <p style={{fontSize:22,fontWeight:900,color:"white",lineHeight:1,
-              fontFamily:k.mono?"'JetBrains Mono',monospace":"'Nunito',sans-serif"}}>
-              {loading ? "—" : k.val}
-            </p>
-            <p style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4}}>{k.sub}</p>
-          </div>
-        ))}
-      </motion.div>
+      {/* ── SCROLLABLE CONTENT (Greeting, Search, KPIs) ── */}
+      <div style={{padding: "4px 16px 20px", position:"relative", zIndex: 1}}>
+        {/* Greeting */}
+        <p style={{fontSize:13,color:"rgba(255,255,255,.55)",fontWeight:500,marginBottom:2}}>
+          Good {g},
+        </p>
+        <p style={{fontFamily:"'Nunito',sans-serif",fontSize:22,fontWeight:900,
+          color:"white",lineHeight:1.1,marginBottom:12}}>
+          {ownerName?.split(" ")[0]||"Owner"} <span style={{color:C.vi2}}>👋</span>
+        </p>
+        
+        {/* Search bar */}
+        <div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
+          borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:9,
+          marginBottom:16}}>
+          <i className="fa-solid fa-magnifying-glass"
+            style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
+          <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
+            Search rooms, tenants…
+          </span>
+        </div>
 
+        {/* KPI cards */}
+        <div style={{display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10}}>
+          {[
+            {label:"Total Rooms", val:total,    sub:`${total-occupied} vacant`,                                                  bg:"#6366F1", icon:"fa-solid fa-building"},
+            {label:"Tenants",     val:occupied, sub:`${rooms.filter(r=>r.status==="paid").length} paid`,                         bg:"#0F9D8B", icon:"fa-solid fa-users"},
+            {label:"Collected",   val:inr(rev), sub:"This month",                                                                bg:"#F59E0B", icon:"fa-solid fa-indian-rupee-sign", mono:true},
+            {label:"Dues Left",   val:inr(pend),sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} tenants`, bg:"#EF4444", icon:"fa-solid fa-clock", mono:true},
+          ].map(k=>(
+            <div key={k.label} style={{borderRadius:18,padding:"14px",position:"relative",
+              overflow:"hidden",background:k.bg,minHeight:90}}>
+              <div style={{position:"absolute",right:10,top:10,width:34,height:34,borderRadius:11,
+                background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <i className={k.icon} style={{fontSize:15,color:"rgba(255,255,255,.9)"}}/>
+              </div>
+              <div style={{position:"absolute",width:65,height:65,borderRadius:"50%",
+                background:"rgba(255,255,255,.07)",bottom:-18,left:-10}}/>
+              <p style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.7)",
+                textTransform:"uppercase",letterSpacing:".3px",marginBottom:6}}>{k.label}</p>
+              <p style={{fontSize:22,fontWeight:900,color:"white",lineHeight:1,
+                fontFamily:k.mono?"'JetBrains Mono',monospace":"'Nunito',sans-serif"}}>
+                {loading ? "—" : k.val}
+              </p>
+              <p style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4}}>{k.sub}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </header>
   );
 }
+
 /* ─── Quick action tiles ─────────────────────────────────── */
 function QuickTiles({ onAnalytics, onExpenses, onRemind }) {
   const tiles = [
@@ -1314,621 +1279,6 @@ function InviteSheet({ room, onClose }) {
   );
 }
 
-/* ─── Add Bill Sheet ─────────────────────────────────────── */
-function AddBillSheet({ room, onClose, toast }) {
-  const [amount, setAmount] = useState(String(room.electricityBill || ""));
-  const [month,  setMonth]  = useState(
-    new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" })
-  );
-  const [busy, setBusy] = useState(false);
-
-  const go = async e => {
-    e.preventDefault();
-    const bill = parseInt(amount, 10);
-    if (!bill || bill < 0) return;
-    setBusy(true);
-    try {
-      await updateDoc(doc(db, "rooms", room.id), {
-        electricityBill: bill,
-        lastBillMonth:   month,
-        // If room was paid, reset to pending so tenant pays new total
-        ...(room.status === "paid" ? { status: "pending", amountPaid: 0, balanceDue: (room.rent || 0) + bill } : {}),
-      });
-      toast(`⚡ Bill ₹${bill.toLocaleString("en-IN")} added for Room ${room.roomNo}`);
-      onClose();
-    } catch(e) { toast(e.message, "error"); }
-    setBusy(false);
-  };
-
-  const currentTotal = (room.rent || 0) + (parseInt(amount, 10) || 0);
-
-  return (
-    <Sheet onClose={onClose} title={`⚡ Electricity Bill — Room ${room.roomNo}`}>
-      <form onSubmit={go}>
-        {/* Tenant info */}
-        <div style={{background:"linear-gradient(135deg,#1E1B4B,#2A1860)",
-          borderRadius:16,padding:"14px 16px",marginBottom:16,
-          display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:42,height:42,borderRadius:13,background:G.violet,flexShrink:0,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            color:"white",fontWeight:900,fontSize:15}}>
-            {init(room.tenantName)}
-          </div>
-          <div>
-            <p style={{fontSize:14,fontWeight:800,color:"white"}}>{room.tenantName}</p>
-            <p style={{fontSize:11,color:"rgba(255,255,255,.45)"}}>Room {room.roomNo} · Rent {inr(room.rent)}</p>
-          </div>
-        </div>
-
-        <SInput label="Electricity Bill Amount (₹)" type="number"
-          value={amount} onChange={setAmount}
-          placeholder="e.g. 850" required min="1"/>
-
-        <SInput label="Billing Month"
-          value={month} onChange={setMonth}
-          placeholder="e.g. June 2025"/>
-
-        {/* Live total preview */}
-        {parseInt(amount,10) > 0 && (
-          <div style={{background:"#FEFCE8",border:"1.5px solid #FEF08A",borderRadius:14,
-            padding:"12px 16px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <p style={{fontSize:11,color:"#92400E",fontWeight:600}}>New Total Due</p>
-              <p style={{fontSize:11,color:"#CA8A04"}}>
-                Rent {inr(room.rent)} + ⚡ {inr(parseInt(amount,10)||0)}
-              </p>
-            </div>
-            <p style={{fontSize:22,fontWeight:900,color:"#CA8A04",
-              fontFamily:"'JetBrains Mono',monospace"}}>{inr(currentTotal)}</p>
-          </div>
-        )}
-
-        {room.status === "paid" && (
-          <div style={{background:"#FEF3C7",border:"1.5px solid #FDE68A",borderRadius:12,
-            padding:"10px 14px",marginBottom:14}}>
-            <p style={{fontSize:12,color:"#92400E",fontWeight:600}}>
-              ⚠️ Room की status "Paid" है — bill add करने पर status वापस "Pending" हो जाएगी।
-            </p>
-          </div>
-        )}
-
-        <SBtn loading={busy} label="⚡ Bill Save करें" grad="linear-gradient(135deg,#F59E0B,#D97706)"/>
-        <div style={{height:8}}/>
-      </form>
-    </Sheet>
-  );
-}
-
-/* ─── Assign Tenant Sheet (offline/manual assignment) ────── */
-function AssignTenantSheet({ room, onClose, toast }) {
-  const [name,    setName]    = useState("");
-  const [phone,   setPhone]   = useState("");
-  const [rent,    setRent]    = useState(String(room.rent || ""));
-  const [deposit, setDeposit] = useState(String(room.securityDeposit || ""));
-  const [busy,    setBusy]    = useState(false);
-  const [err,     setErr]     = useState("");
-
-  const go = async e => {
-    e.preventDefault();
-    setErr("");
-    if (!name.trim())         { setErr("Tenant का नाम जरूरी है।"); return; }
-    if (phone && phone.length !== 10) { setErr("Phone 10 digits का होना चाहिए।"); return; }
-    setBusy(true);
-    try {
-      await updateDoc(doc(db, "rooms", room.id), {
-        tenantName:      name.trim(),
-        tenantPhone:     phone.trim() || "",
-        rent:            parseInt(rent,   10) || 0,
-        securityDeposit: parseInt(deposit,10) || 0,
-        status:          "pending",
-        // Clear any previous tenant link since this is an offline assignment
-        tenantUid:       "",
-        amountPaid:      0,
-        balanceDue:      parseInt(rent,10) || 0,
-        assignedAt:      new Date().toISOString(),
-      });
-      toast(`✓ ${name.trim()} को Room ${room.roomNo} में assign किया!`);
-      onClose();
-    } catch(e) { setErr(e.message); }
-    setBusy(false);
-  };
-
-  return (
-    <Sheet onClose={onClose} title={`🏠 Assign Tenant — Room ${room.roomNo}`}>
-      <form onSubmit={go}>
-        {/* Room info */}
-        <div style={{background:C.bg,border:`1.5px solid ${C.bdr}`,borderRadius:14,
-          padding:"12px 14px",marginBottom:16,
-          display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:38,height:38,borderRadius:11,
-            background:"linear-gradient(135deg,#CBD5E1,#94A3B8)",flexShrink:0,
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <i className="fa-solid fa-door-open" style={{fontSize:16,color:"white",opacity:.7}}/>
-          </div>
-          <div>
-            <p style={{fontSize:13,fontWeight:800,color:C.t1}}>Room {room.roomNo}</p>
-            <p style={{fontSize:11,color:C.t3}}>Currently Vacant</p>
-          </div>
-        </div>
-
-        <SInput label="Tenant का नाम *" value={name} onChange={setName}
-          placeholder="Ravi Kumar" required/>
-
-        <div style={{marginBottom:14}}>
-          <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-            textTransform:"uppercase",letterSpacing:".08em",marginBottom:5}}>
-            WhatsApp Number (optional)
-          </label>
-          <div style={{position:"relative"}}>
-            <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
-              fontSize:14,fontWeight:700,color:C.brand,pointerEvents:"none"}}>+91</span>
-            <input type="tel" value={phone}
-              onChange={e=>setPhone(e.target.value.replace(/\D/g,"").slice(0,10))}
-              placeholder="10-digit number"
-              style={{width:"100%",padding:"13px 14px 13px 48px",borderRadius:13,
-                fontSize:15,fontWeight:500,outline:"none",color:C.t1,
-                fontFamily:"'Poppins',sans-serif",background:"#F5F3FF",
-                border:`1.5px solid ${C.bdr}`,transition:"all .2s"}}
-              onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.background="#fff";}}
-              onBlur={e=>{e.target.style.borderColor=C.bdr;e.target.style.background="#F5F3FF";}}/>
-          </div>
-          <p style={{fontSize:11,color:C.t3,marginTop:4}}>
-            Number देने पर tenant को WhatsApp reminder भेज सकते हैं।
-          </p>
-        </div>
-
-        <SInput label="Monthly Rent (₹) *" type="number"
-          value={rent} onChange={setRent}
-          placeholder="8000" required min="1"/>
-
-        <SInput label="Security Deposit (₹)" type="number"
-          value={deposit} onChange={setDeposit}
-          placeholder="16000" min="0"/>
-
-        {/* Summary preview */}
-        {name.trim() && parseInt(rent,10) > 0 && (
-          <div style={{background:"#F0FDF4",border:"1.5px solid #86EFAC",borderRadius:14,
-            padding:"12px 16px",marginBottom:14}}>
-            <p style={{fontSize:12,fontWeight:700,color:"#14532D",marginBottom:6}}>Assignment Summary</p>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-              <span style={{fontSize:12,color:"#166534"}}>Tenant</span>
-              <span style={{fontSize:12,fontWeight:700,color:"#14532D"}}>{name.trim()}</span>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-              <span style={{fontSize:12,color:"#166534"}}>Monthly Rent</span>
-              <span style={{fontSize:12,fontWeight:700,color:"#14532D"}}>{inr(parseInt(rent,10)||0)}</span>
-            </div>
-            {parseInt(deposit,10) > 0 && (
-              <div style={{display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:12,color:"#166534"}}>Security Deposit</span>
-                <span style={{fontSize:12,fontWeight:700,color:"#14532D"}}>{inr(parseInt(deposit,10))}</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {err && (
-          <div style={{background:"#FEE2E2",color:"#991B1B",border:"1.5px solid #FECACA",
-            borderRadius:12,padding:"10px 14px",fontSize:13,fontWeight:600,marginBottom:12}}>
-            {err}
-          </div>
-        )}
-
-        <SBtn loading={busy} label="✓ Tenant Assign करें" grad={G.emerald}/>
-
-        <div style={{background:C.bg,border:`1.5px solid ${C.bdr}`,borderRadius:12,
-          padding:"10px 14px",marginTop:12}}>
-          <p style={{fontSize:11,color:C.t2,lineHeight:1.5}}>
-            💡 अगर tenant app use करना चाहे तो बाद में <strong>🔗 Invite</strong> button से
-            Connection Code share करें — वो उससे login करके connect हो जाएगा।
-          </p>
-        </div>
-        <div style={{height:8}}/>
-      </form>
-    </Sheet>
-  );
-}
-
-/* ─── Photo Picker helper ────────────────────────────────── */
-// Converts a file input image to a base64 string (stored in Firestore)
-function pickPhoto(onChange) {
-  const inp = document.createElement("input");
-  inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
-  inp.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => onChange(ev.target.result); // base64 data URL
-    reader.readAsDataURL(file);
-  };
-  inp.click();
-}
-
-function Avatar({ src, name, size=64, grad, onPick, label="Photo" }) {
-  return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-      <div
-        onClick={onPick ? ()=>pickPhoto(onPick) : undefined}
-        style={{width:size,height:size,borderRadius:size*.28,flexShrink:0,cursor:onPick?"pointer":"default",
-          background:src?"transparent":grad||G.violet,overflow:"hidden",position:"relative",
-          border:`2px solid ${src?"#EDE9FE":"transparent"}`,
-          display:"flex",alignItems:"center",justifyContent:"center"}}>
-        {src
-          ? <img src={src} alt={name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-          : <span style={{color:"white",fontWeight:900,fontSize:size*.24}}>{init(name)}</span>}
-        {onPick && (
-          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.35)",
-            display:"flex",alignItems:"center",justifyContent:"center",opacity:0,transition:"opacity .2s"}}
-            onMouseEnter={e=>e.currentTarget.style.opacity=1}
-            onMouseLeave={e=>e.currentTarget.style.opacity=0}>
-            <i className="fa-solid fa-camera" style={{color:"white",fontSize:size*.2}}/>
-          </div>
-        )}
-      </div>
-      {onPick && (
-        <span style={{fontSize:10,fontWeight:600,color:C.t3,cursor:"pointer"}}
-          onClick={()=>pickPhoto(onPick)}>
-          <i className="fa-solid fa-camera" style={{marginRight:4}}/>{label}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/* ─── Tenant Detail Sheet ────────────────────────────────── */
-function TenantDetailSheet({ room, onClose, toast }) {
-  const [photo,       setPhoto]       = useState(room.tenantPhoto     || "");
-  const [name,        setName]        = useState(room.tenantName      || "");
-  const [phone,       setPhone]       = useState(room.tenantPhone     || "");
-  const [aadhaar,     setAadhaar]     = useState(room.tenantAadhaar   || "");
-  const [address,     setAddress]     = useState(room.tenantAddress   || "");
-  const [occupation,  setOccupation]  = useState(room.tenantOccupation|| "");
-  const [emergencyName, setEmName]    = useState(room.emergencyName   || "");
-  const [emergencyPhone,setEmPhone]   = useState(room.emergencyPhone  || "");
-  const [dob,         setDob]         = useState(room.tenantDob       || "");
-  const [busy,        setBusy]        = useState(false);
-  const [tab,         setTab]         = useState("details"); // "details" | "docs"
-
-  const save = async e => {
-    e.preventDefault(); setBusy(true);
-    try {
-      await updateDoc(doc(db,"rooms",room.id),{
-        tenantPhoto:       photo,
-        tenantName:        name.trim(),
-        tenantPhone:       phone.trim(),
-        tenantAadhaar:     aadhaar.trim(),
-        tenantAddress:     address.trim(),
-        tenantOccupation:  occupation.trim(),
-        emergencyName:     emergencyName.trim(),
-        emergencyPhone:    emergencyPhone.trim(),
-        tenantDob:         dob,
-      });
-      toast(`✓ ${name.trim()} का profile update हो गया!`);
-      onClose();
-    } catch(e) { toast(e.message,"error"); }
-    setBusy(false);
-  };
-
-  const TAB = (k,l) => (
-    <button type="button" onClick={()=>setTab(k)}
-      style={{flex:1,padding:"9px",borderRadius:10,border:"none",cursor:"pointer",fontWeight:700,fontSize:13,
-        background:tab===k?G.violet:"#F5F3FF",color:tab===k?"white":C.t2,transition:"all .2s"}}>
-      {l}
-    </button>
-  );
-
-  return (
-    <Sheet onClose={onClose} title="">
-      <div style={{padding:"0 18px"}}>
-        {/* Header */}
-        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:18,paddingTop:4}}>
-          <Avatar src={photo} name={name||"?"} size={72} onPick={setPhoto} label="Change Photo"/>
-          <div style={{flex:1}}>
-            <p style={{fontWeight:900,fontSize:18,color:C.t1,lineHeight:1.1}}>{name||"New Tenant"}</p>
-            <p style={{fontSize:12,color:C.t3,marginTop:3}}>Room {room.roomNo}</p>
-            {occupation && <p style={{fontSize:12,color:C.vi,fontWeight:600,marginTop:2}}>{occupation}</p>}
-          </div>
-        </div>
-
-        {/* Tab switcher */}
-        <div style={{display:"flex",gap:6,marginBottom:16}}>
-          <TAB k="details" l="👤 Details"/>
-          <TAB k="docs"    l="📄 Documents"/>
-          <TAB k="emergency" l="🆘 Emergency"/>
-        </div>
-
-        <form onSubmit={save}>
-          {tab==="details" && <>
-            <SInput label="Full Name *" value={name} onChange={setName} placeholder="Ravi Kumar" required/>
-            <div style={{marginBottom:13}}>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>WhatsApp Number</label>
-              <div style={{position:"relative"}}>
-                <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
-                  fontSize:14,fontWeight:700,color:C.brand,pointerEvents:"none"}}>+91</span>
-                <input type="tel" value={phone}
-                  onChange={e=>setPhone(e.target.value.replace(/\D/g,"").slice(0,10))}
-                  placeholder="10-digit number"
-                  style={{width:"100%",padding:"13px 14px 13px 48px",borderRadius:13,fontSize:15,
-                    fontWeight:500,outline:"none",color:C.t1,fontFamily:"'Poppins',sans-serif",
-                    background:"#F5F3FF",border:`1.5px solid ${C.bdr}`,transition:"all .2s"}}
-                  onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.background="#fff";}}
-                  onBlur={e=>{e.target.style.borderColor=C.bdr;e.target.style.background="#F5F3FF";}}/>
-              </div>
-            </div>
-            <SInput label="Occupation / Profession" value={occupation} onChange={setOccupation} placeholder="e.g. Software Engineer, Student, Shopkeeper"/>
-            <SInput label="Date of Birth" type="date" value={dob} onChange={setDob}/>
-            <div style={{marginBottom:13}}>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>
-                Permanent Address
-              </label>
-              <textarea rows={3} value={address} onChange={e=>setAddress(e.target.value)}
-                placeholder="Permanent home address…"
-                style={{width:"100%",padding:"12px 14px",borderRadius:13,fontSize:14,fontWeight:500,
-                  outline:"none",color:C.t1,fontFamily:"'Poppins',sans-serif",resize:"none",
-                  background:"#F5F3FF",border:`1.5px solid ${C.bdr}`,transition:"all .2s"}}
-                onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.background="#fff";}}
-                onBlur={e=>{e.target.style.borderColor=C.bdr;e.target.style.background="#F5F3FF";}}/>
-            </div>
-          </>}
-
-          {tab==="docs" && <>
-            <div style={{background:"#FFF7ED",border:"1.5px solid #FED7AA",borderRadius:14,
-              padding:"10px 14px",marginBottom:16}}>
-              <p style={{fontSize:12,color:"#92400E",fontWeight:600}}>
-                📸 Aadhaar card का photo click करके upload करें। यह data सिर्फ आपके device पर store होता है।
-              </p>
-            </div>
-            <SInput label="Aadhaar Number" value={aadhaar} onChange={v=>setAadhaar(v.replace(/\D/g,"").slice(0,12))}
-              placeholder="12-digit Aadhaar number"/>
-            {/* Aadhaar photo front */}
-            <div style={{marginBottom:16}}>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>
-                Aadhaar Card Photo
-              </label>
-              <div style={{display:"flex",gap:10}}>
-                {["aadhaarFront","aadhaarBack"].map(k=>{
-                  const src = k==="aadhaarFront" ? room.aadhaarFront : room.aadhaarBack;
-                  return (
-                    <div key={k}
-                      onClick={()=>pickPhoto(b64=>{
-                        updateDoc(doc(db,"rooms",room.id),{[k]:b64})
-                          .then(()=>toast(`✓ ${k==="aadhaarFront"?"Front":"Back"} uploaded!`))
-                          .catch(()=>toast("Upload failed","error"));
-                      })}
-                      style={{flex:1,aspectRatio:"1.6",borderRadius:12,cursor:"pointer",
-                        border:`2px dashed ${C.bdr}`,overflow:"hidden",
-                        background:C.bg,display:"flex",flexDirection:"column",
-                        alignItems:"center",justifyContent:"center",gap:6}}>
-                      {src
-                        ? <img src={src} alt={k} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                        : <>
-                          <i className="fa-solid fa-id-card" style={{fontSize:22,color:C.t3}}/>
-                          <span style={{fontSize:10,fontWeight:600,color:C.t3}}>
-                            {k==="aadhaarFront"?"Front":"Back"}
-                          </span>
-                        </>
-                      }
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>}
-
-          {tab==="emergency" && <>
-            <div style={{background:"#FEF2F2",border:"1.5px solid #FECACA",borderRadius:14,
-              padding:"10px 14px",marginBottom:16}}>
-              <p style={{fontSize:12,color:"#991B1B",fontWeight:600}}>
-                🆘 Emergency में इस व्यक्ति से संपर्क करें।
-              </p>
-            </div>
-            <SInput label="Emergency Contact Name" value={emergencyName} onChange={setEmName}
-              placeholder="Father / Mother / Spouse name"/>
-            <div style={{marginBottom:13}}>
-              <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>Emergency Phone</label>
-              <div style={{position:"relative"}}>
-                <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
-                  fontSize:14,fontWeight:700,color:C.brand,pointerEvents:"none"}}>+91</span>
-                <input type="tel" value={emergencyPhone}
-                  onChange={e=>setEmPhone(e.target.value.replace(/\D/g,"").slice(0,10))}
-                  placeholder="Emergency number"
-                  style={{width:"100%",padding:"13px 14px 13px 48px",borderRadius:13,fontSize:15,
-                    fontWeight:500,outline:"none",color:C.t1,fontFamily:"'Poppins',sans-serif",
-                    background:"#F5F3FF",border:`1.5px solid ${C.bdr}`,transition:"all .2s"}}
-                  onFocus={e=>{e.target.style.borderColor=C.brand;e.target.style.background="#fff";}}
-                  onBlur={e=>{e.target.style.borderColor=C.bdr;e.target.style.background="#F5F3FF";}}/>
-              </div>
-            </div>
-          </>}
-
-          <SBtn loading={busy} label="💾 Save Profile" grad={G.violet}/>
-          <div style={{height:8}}/>
-        </form>
-      </div>
-    </Sheet>
-  );
-}
-
-/* ─── Room Detail Sheet ──────────────────────────────────── */
-function RoomDetailSheet({ room, buildings, onClose, onEdit, onToggle, onAddBill, onAssign, onInvite, onDelete, toast }) {
-  const vacant  = !room.tenantName?.trim();
-  const total   = (room.rent||0) + (room.electricityBill||0);
-  const cfg     = SC[vacant?"vacant":(room.status||"pending")] || SC.pending;
-  const bName   = buildings[room.buildingId]?.name || "";
-  const [showTenant, setShowTenant] = useState(false);
-
-  const Row = ({icon,label,value,mono,color})=> value ? (
-    <div style={{display:"flex",alignItems:"flex-start",gap:12,padding:"11px 0",
-      borderBottom:`1px solid ${C.bdr}`}}>
-      <i className={icon} style={{fontSize:14,color:C.vi,marginTop:2,width:16,textAlign:"center"}}/>
-      <div style={{flex:1}}>
-        <p style={{fontSize:11,color:C.t3,fontWeight:600,marginBottom:2}}>{label}</p>
-        <p style={{fontSize:14,fontWeight:700,color:color||C.t1,
-          fontFamily:mono?"'JetBrains Mono',monospace":"inherit"}}>{value}</p>
-      </div>
-    </div>
-  ) : null;
-
-  return (
-    <>
-      <Sheet onClose={onClose} title="">
-        {/* Room hero */}
-        <div style={{background:G.hdr,margin:"0 0 0",padding:"0 0 20px"}}>
-          <div style={{padding:"16px 18px 0"}}>
-            {/* Room number + building */}
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-              <div style={{width:52,height:52,borderRadius:16,background:"rgba(255,255,255,.12)",
-                display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <i className="fa-solid fa-door-open" style={{fontSize:22,color:"white"}}/>
-              </div>
-              <div style={{flex:1}}>
-                <p style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600,marginBottom:2}}>
-                  {bName || "Room"}
-                </p>
-                <p style={{fontSize:22,fontWeight:900,color:"white"}}>Room {room.roomNo}</p>
-              </div>
-              <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:20,
-                background:cfg.bdg[0]+"33",color:"white",border:"1px solid rgba(255,255,255,.2)"}}>
-                {cfg.lbl}
-              </span>
-            </div>
-
-            {/* Rent summary */}
-            <div style={{display:"flex",gap:8}}>
-              {[
-                {l:"Rent",v:inr(room.rent||0),c:"#F5A623"},
-                {l:"Electricity",v:inr(room.electricityBill||0),c:"#FCD34D"},
-                {l:"Total Due",v:inr(total),c:"#86EFAC"},
-              ].map(s=>(
-                <div key={s.l} style={{flex:1,background:"rgba(255,255,255,.08)",borderRadius:12,
-                  padding:"10px 8px",textAlign:"center",border:"1px solid rgba(255,255,255,.10)"}}>
-                  <p style={{fontSize:9,color:"rgba(255,255,255,.45)",fontWeight:600,
-                    textTransform:"uppercase",marginBottom:4}}>{s.l}</p>
-                  <p style={{fontSize:14,fontWeight:900,color:s.c,
-                    fontFamily:"'JetBrains Mono',monospace"}}>{s.v}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div style={{padding:"4px 18px 0"}}>
-          {/* Tenant section */}
-          <div style={{marginBottom:4}}>
-            <p style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase",
-              letterSpacing:".08em",margin:"14px 0 10px"}}>Tenant</p>
-
-            {vacant ? (
-              <div style={{background:C.bg,borderRadius:16,padding:"16px",
-                textAlign:"center",border:`1.5px dashed ${C.bdr}`,marginBottom:14}}>
-                <i className="fa-solid fa-user-slash" style={{fontSize:24,color:C.t3,marginBottom:8,display:"block"}}/>
-                <p style={{fontWeight:700,color:C.t2,marginBottom:10}}>Room Vacant है</p>
-                <button onClick={()=>{onClose();onAssign(room);}}
-                  style={{padding:"9px 20px",borderRadius:12,border:"none",cursor:"pointer",
-                    background:G.brand,color:"white",fontWeight:800,fontSize:13}}>
-                  + Assign Tenant
-                </button>
-              </div>
-            ) : (
-              <div onClick={()=>setShowTenant(true)}
-                style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",
-                  background:C.bg,borderRadius:16,border:`1.5px solid ${C.bdr}`,
-                  cursor:"pointer",marginBottom:4,transition:"all .15s"}}
-                onPointerDown={e=>e.currentTarget.style.background="#EDE9FE"}
-                onPointerUp={e=>e.currentTarget.style.background=C.bg}>
-                <Avatar src={room.tenantPhoto} name={room.tenantName} size={48} grad={G.violet}/>
-                <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontWeight:800,fontSize:15,color:C.t1}}>{room.tenantName}</p>
-                  <p style={{fontSize:12,color:C.t3}}>
-                    {room.tenantOccupation||""}
-                    {room.tenantPhone ? ` · +91 ${room.tenantPhone}` : ""}
-                  </p>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-                  <span style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8,
-                    background:cfg.bdg[0],color:cfg.bdg[1]}}>{cfg.lbl}</span>
-                  <span style={{fontSize:11,color:C.vi,fontWeight:600}}>View Profile →</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Room details */}
-          <p style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase",
-            letterSpacing:".08em",margin:"14px 0 4px"}}>Room Details</p>
-          <Row icon="fa-solid fa-key"      label="Connection Code"  value={room.connectionCode} mono/>
-          <Row icon="fa-solid fa-calendar" label="Move-in Date"
-            value={room.assignedAt
-              ? new Date(room.assignedAt).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})
-              : room.createdAt?.toDate
-              ? room.createdAt.toDate().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})
-              : null}/>
-          <Row icon="fa-solid fa-shield"   label="Security Deposit" value={room.securityDeposit>0?inr(room.securityDeposit):null} color="#7C3AED"/>
-          <Row icon="fa-solid fa-bolt"     label="Last Bill Month"  value={room.lastBillMonth}/>
-
-          {/* Action buttons */}
-          <p style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:"uppercase",
-            letterSpacing:".08em",margin:"16px 0 10px"}}>Actions</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-            {!vacant && <>
-              <button onClick={()=>{onClose();onToggle(room.id,room.status);}}
-                style={{padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
-                  background:cfg.btn,color:"white",fontWeight:800,fontSize:13}}>
-                ₹ {cfg.btnL}
-              </button>
-              <button onClick={()=>{onClose();onAddBill(room);}}
-                style={{padding:"11px",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:13,
-                  background:"#FEFCE8",color:"#CA8A04",border:"1px solid #FEF08A"}}>
-                ⚡ Add Bill
-              </button>
-              <button onClick={()=>{onClose();onEdit(room);}}
-                style={{padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
-                  background:C.bg,color:C.vi,fontWeight:700,fontSize:13}}>
-                ✏️ Edit Room
-              </button>
-              <button onClick={()=>{onClose();onInvite(room);}}
-                style={{padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
-                  background:G.brand,color:"white",fontWeight:700,fontSize:13}}>
-                🔗 Invite
-              </button>
-            </>}
-            {vacant && <>
-              <button onClick={()=>{onClose();onAssign(room);}}
-                style={{padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
-                  background:G.brand,color:"white",fontWeight:800,fontSize:13}}>
-                + Assign
-              </button>
-              <button onClick={()=>{onClose();onInvite(room);}}
-                style={{padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
-                  background:G.violet,color:"white",fontWeight:700,fontSize:13}}>
-                🔗 Invite
-              </button>
-            </>}
-          </div>
-          <button onClick={()=>{onClose();onDelete("room",room.id,`Room ${room.roomNo}`);}}
-            style={{width:"100%",padding:"11px",borderRadius:12,border:"1.5px solid #FECACA",
-              cursor:"pointer",background:"#FEF2F2",color:"#E11D48",fontWeight:700,fontSize:13}}>
-            🗑️ Delete Room
-          </button>
-          <div style={{height:16}}/>
-        </div>
-      </Sheet>
-
-      {/* Tenant detail sub-sheet */}
-      <AnimatePresence>
-        {showTenant && (
-          <TenantDetailSheet key="td" room={room}
-            onClose={()=>setShowTenant(false)} toast={toast}/>
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
-
 /* ─── Delete Confirm Sheet ───────────────────────────────── */
 function DeleteConfirmSheet({ target, onClose, onConfirm }) {
   const [busy, setBusy] = useState(false);
@@ -1963,9 +1313,6 @@ function DeleteConfirmSheet({ target, onClose, onConfirm }) {
             disabled={busy}
             onClick={async () => {
               setBusy(true);
-              // Close FIRST — before the Firestore delete fires.
-              // This prevents a freeze when onSnapshot updates rooms/buildings
-              // while this sheet is still mounted, causing AnimatePresence conflicts.
               onClose();
               await onConfirm();
             }}
@@ -2017,7 +1364,7 @@ export default function OwnerDashboardView() {
   const scrollRef= useRef(null);
   const scrollY  = useMotionValue(0);
 
-  // ── Toast — must be declared before any callback that uses it ──
+  // ── Toast ───────────────────────────────────────
   const toast = useCallback((msg, type="success") => {
     const id = Date.now();
     setToasts(p => [...p, {id, msg, type}]);
@@ -2099,7 +1446,6 @@ export default function OwnerDashboardView() {
     if(action==="logout"){
       const uid = authUser?.uid;
       await signOut(auth);
-      // Clear any stale cached keys (belt-and-suspenders)
       if (uid) localStorage.removeItem(`rkp_role_${uid}`);
       setUserRole(null);
       navigate("/login",{replace:true});
@@ -2147,16 +1493,14 @@ export default function OwnerDashboardView() {
       <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",
         background:C.bg,fontFamily:"'Poppins',-apple-system,sans-serif"}}>
 
-        {/* Sticky header */}
-        <Header ownerName={ownerName} rooms={rooms} loading={loading} scrollY={scrollY}/>
-
-        {/* Scrollable body */}
+        {/* ── STICKY HEADER WRAPPER ── */}
         <div ref={scrollRef}
           onScroll={e=>scrollY.set(e.currentTarget.scrollTop)}
           style={{flex:1,overflowY:"auto",overflowX:"hidden",background:C.bg,
-            WebkitOverflowScrolling:"touch",
-            // Minimum height ensures header always collapses fully
-            minHeight:0}}>
+            WebkitOverflowScrolling:"touch"}}>
+
+          {/* This Header will now scroll naturally but its top bar will stick */}
+          <Header ownerName={ownerName} rooms={rooms} loading={loading} scrollY={scrollY}/>
 
           <div style={{padding:"16px 14px 28px"}}>
 
@@ -2281,8 +1625,8 @@ export default function OwnerDashboardView() {
 
       </div>
 
-      {/* Toasts */}
-      <Toasts list={toasts} dismiss={useCallback(id=>setToasts(p=>p.filter(t=>t.id!==id)),[])}/>
+      {/* ── THE FATAL HOOK VIOLATION FIXED HERE ── */}
+      <Toasts list={toasts} dismiss={(id) => setToasts(p => p.filter(t => t.id !== id))} />
 
       {/* Sheets */}
       <AnimatePresence>
