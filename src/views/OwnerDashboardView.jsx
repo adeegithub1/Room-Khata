@@ -664,41 +664,52 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
 
 /* ─── Finance Header ─────────────────────────────────────── */
 function Header({ ownerName, rooms, loading, scrollY }) {
-  const rev  = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
-  const pend = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
-  const total = rooms.length;
+  const rev      = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
+  const pend     = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
+  const total    = rooms.length;
   const occupied = rooms.filter(r=>r.tenantName?.trim()).length;
-  const [g] = greet();
+  const [g]      = greet();
 
-  // ── Scroll collapse — GPU-only (opacity + translateY, NO maxHeight/layout) ──
-  const CS = 20, CE = 80;
-  const exOp = useTransform(scrollY,[CS,CE],[1,0]);
-  const exY  = useTransform(scrollY,[CS,CE],[0,-10]);
-  const miOp = useTransform(scrollY,[CS+10,CE],[0,1]);
+  // ── Scroll transforms ─────────────────────────────────────
+  // CS→CE: content fades + slides up
+  // CE→CE: maxHeight collapses so header physically shrinks
+  const CS = 10, CE = 90;
+
+  // Visual: opacity + slight upward move (GPU only — no layout)
+  const exOp  = useTransform(scrollY, [CS, CE],  [1, 0]);
+  const exY   = useTransform(scrollY, [CS, CE],  [0, -8]);
+  const miOp  = useTransform(scrollY, [CS+15, CE], [0, 1]);
+
+  // Layout: maxHeight drives actual space collapse (safe — fixed px range)
+  // greeting + search + pill section ≈ 120px
+  const greetMax = useTransform(scrollY, [CS, CE], ["130px", "0px"]);
+  // KPI grid ≈ 220px total with padding
+  const kpiMax   = useTransform(scrollY, [CS, CE], ["240px", "0px"]);
+  const kpiPadT  = useTransform(scrollY, [CS, CE], ["14px",  "0px"]);
+  const kpiPadB  = useTransform(scrollY, [CS, CE], ["18px",  "0px"]);
 
   return (
     <header style={{
       background: C.dark, flexShrink:0, position:"relative", overflow:"hidden",
       paddingTop:"max(44px,env(safe-area-inset-top))",
-      // Force GPU layer — prevents any CPU layout during scroll
       transform:"translateZ(0)", willChange:"transform",
     }}>
-      {/* Subtle geo orbs */}
+      {/* Orbs */}
       <div style={{position:"absolute",width:180,height:180,borderRadius:"50%",
         background:"rgba(99,102,241,.18)",top:-60,right:-50,pointerEvents:"none"}}/>
       <div style={{position:"absolute",width:100,height:100,borderRadius:"50%",
         background:"rgba(99,102,241,.1)",bottom:-30,left:-20,pointerEvents:"none"}}/>
 
-      <div style={{position:"relative",zIndex:1,padding:"12px 16px 16px"}}>
+      <div style={{position:"relative",zIndex:1,padding:"12px 16px 0"}}>
 
-        {/* ── Top bar ── */}
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+        {/* ── Always-visible top bar ── */}
+        <div style={{display:"flex",alignItems:"center",
+          justifyContent:"space-between",marginBottom:12}}>
 
-          {/* Left: location / collapsed name */}
+          {/* Left: expanded label / collapsed mini name */}
           <div style={{flex:1,minWidth:0,marginRight:12,position:"relative",height:38}}>
-            {/* Expanded: property label */}
-            <motion.div style={{opacity:exOp,y:exY,position:"absolute",top:0,left:0,
-              willChange:"opacity,transform"}}>
+            <motion.div style={{opacity:exOp,y:exY,
+              position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
               <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:500,marginBottom:2}}>
                 Your property
               </p>
@@ -709,14 +720,13 @@ function Header({ ownerName, rooms, loading, scrollY }) {
                 </p>
               </div>
             </motion.div>
-            {/* Collapsed: name + stats */}
-            <motion.div style={{opacity:miOp,position:"absolute",top:0,left:0,
-              willChange:"opacity,transform"}}>
+            <motion.div style={{opacity:miOp,
+              position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
               <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1}}>
                 {ownerName?.split(" ")[0]||"Dashboard"}
               </p>
               <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:600,marginTop:2}}>
-                {inr(rev)} collected · {occupied}/{total} occupied
+                {inr(rev)} · {occupied}/{total} occupied
               </p>
             </motion.div>
           </div>
@@ -724,86 +734,84 @@ function Header({ ownerName, rooms, loading, scrollY }) {
           {/* Right: bell + avatar */}
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
             <Bell rooms={rooms}/>
-            {/* Owner avatar */}
-            <div style={{width:40,height:40,borderRadius:14,background:C.ind,
+            <div style={{width:38,height:38,borderRadius:13,background:C.ind,
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontWeight:800,fontSize:14,color:"white",position:"relative",
-              fontFamily:"'Nunito',sans-serif"}}>
+              fontWeight:800,fontSize:13,color:"white",position:"relative"}}>
               {ownerName ? ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase() : "RK"}
-              <div style={{position:"absolute",inset:-2,borderRadius:16,
-                border:"2px solid",borderColor:C.vi2,opacity:.5}}/>
+              <div style={{position:"absolute",inset:-2,borderRadius:15,
+                border:`1.5px solid ${C.vi2}`,opacity:.45,pointerEvents:"none"}}/>
             </div>
           </div>
         </div>
 
-        {/* ── Expandable: greeting + search + stats ── */}
-        <motion.div style={{opacity:exOp,y:exY,willChange:"opacity,transform"}}>
+        {/* ── Collapsing: greeting + search bar ──
+            maxHeight drives layout collapse; overflow:hidden clips content cleanly */}
+        <motion.div style={{
+          opacity: exOp,
+          y:       exY,
+          maxHeight: greetMax,
+          overflow: "hidden",
+          willChange: "opacity,transform,max-height",
+        }}>
           <p style={{fontSize:13,color:"rgba(255,255,255,.55)",fontWeight:500,marginBottom:2}}>
             Good {g},
           </p>
-          <p style={{fontFamily:"'Nunito',sans-serif",fontSize:22,fontWeight:900,color:"white",
-            lineHeight:1.1,marginBottom:14}}>
-            {ownerName?.split(" ")[0]||"Owner"}{" "}
-            <span style={{color:C.vi2}}>👋</span>
+          <p style={{fontFamily:"'Nunito',sans-serif",fontSize:22,fontWeight:900,
+            color:"white",lineHeight:1.1,marginBottom:12}}>
+            {ownerName?.split(" ")[0]||"Owner"} <span style={{color:C.vi2}}>👋</span>
           </p>
-
-          {/* Search bar */}
           <div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
             borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:9,
-            marginBottom:16}}>
-            <i className="fa-solid fa-magnifying-glass" style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
+            marginBottom:12}}>
+            <i className="fa-solid fa-magnifying-glass"
+              style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
             <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
               Search rooms, tenants…
             </span>
           </div>
-
-          {/* Occupied pill */}
-          <div style={{position:"relative",height:0}}>
-            <div style={{position:"absolute",right:0,top:-8,
-              display:"flex",alignItems:"center",gap:5,
-              background:"rgba(99,102,241,.2)",border:"1px solid rgba(129,140,248,.3)",
-              borderRadius:20,padding:"5px 10px 5px 7px",zIndex:2}}>
-              <div style={{width:8,height:8,borderRadius:"50%",background:"#22C55E"}}/>
-              <span style={{fontSize:11,fontWeight:700,color:"#C7D2FE"}}>
-                {occupied} / {total} occupied
-              </span>
-            </div>
-          </div>
         </motion.div>
+
       </div>
 
-      {/* ── KPI cards row ── */}
-      <motion.div style={{opacity:exOp,y:exY,willChange:"opacity,transform",
-        padding:"14px 14px 18px",display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+      {/* ── KPI cards — also collapses on scroll ── */}
+      <motion.div style={{
+        opacity:   exOp,
+        maxHeight: kpiMax,
+        paddingTop:    kpiPadT,
+        paddingBottom: kpiPadB,
+        paddingLeft:  "14px",
+        paddingRight: "14px",
+        overflow: "hidden",
+        display:  "grid",
+        gridTemplateColumns: "repeat(2,1fr)",
+        gap: 10,
+        willChange: "opacity,max-height",
+      }}>
         {[
-          {label:"Total Rooms",  val:total,       sub:`${total-occupied} vacant`, bg:"#6366F1", icon:"fa-solid fa-building"},
-          {label:"Tenants",      val:occupied,     sub:`${rooms.filter(r=>r.status==="paid").length} paid`, bg:"#0F9D8B", icon:"fa-solid fa-users"},
-          {label:"Collected",    val:inr(rev),     sub:"This month", bg:"#F59E0B", icon:"fa-solid fa-indian-rupee-sign", mono:true},
-          {label:"Dues Left",    val:inr(pend),    sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} tenants`, bg:"#EF4444", icon:"fa-solid fa-clock", mono:true},
+          {label:"Total Rooms", val:total,    sub:`${total-occupied} vacant`,                                                  bg:"#6366F1", icon:"fa-solid fa-building"},
+          {label:"Tenants",     val:occupied, sub:`${rooms.filter(r=>r.status==="paid").length} paid`,                         bg:"#0F9D8B", icon:"fa-solid fa-users"},
+          {label:"Collected",   val:inr(rev), sub:"This month",                                                                bg:"#F59E0B", icon:"fa-solid fa-indian-rupee-sign", mono:true},
+          {label:"Dues Left",   val:inr(pend),sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} tenants`, bg:"#EF4444", icon:"fa-solid fa-clock", mono:true},
         ].map(k=>(
-          <div key={k.label} style={{borderRadius:18,padding:"14px",position:"relative",overflow:"hidden",
-            background:k.bg}}>
-            {/* Icon */}
-            <div style={{position:"absolute",right:10,top:10,width:36,height:36,borderRadius:12,
+          <div key={k.label} style={{borderRadius:18,padding:"14px",position:"relative",
+            overflow:"hidden",background:k.bg,minHeight:90}}>
+            <div style={{position:"absolute",right:10,top:10,width:34,height:34,borderRadius:11,
               background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <i className={k.icon} style={{fontSize:16,color:"rgba(255,255,255,.9)"}}/>
+              <i className={k.icon} style={{fontSize:15,color:"rgba(255,255,255,.9)"}}/>
             </div>
-            {/* Geo */}
-            <div style={{position:"absolute",width:70,height:70,borderRadius:"50%",
-              background:"rgba(255,255,255,.07)",bottom:-20,left:-10}}/>
-            <p style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,.7)",
-              letterSpacing:".3px",textTransform:"uppercase",marginBottom:8}}>{k.label}</p>
-            <p style={{fontFamily:"'Nunito',sans-serif",fontSize:loading?22:26,fontWeight:900,
-              color:"white",lineHeight:1,
+            <div style={{position:"absolute",width:65,height:65,borderRadius:"50%",
+              background:"rgba(255,255,255,.07)",bottom:-18,left:-10}}/>
+            <p style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.7)",
+              textTransform:"uppercase",letterSpacing:".3px",marginBottom:6}}>{k.label}</p>
+            <p style={{fontSize:22,fontWeight:900,color:"white",lineHeight:1,
               fontFamily:k.mono?"'JetBrains Mono',monospace":"'Nunito',sans-serif"}}>
               {loading ? "—" : k.val}
             </p>
-            <p style={{fontSize:11,color:"rgba(255,255,255,.6)",marginTop:4,fontWeight:500}}>
-              {k.sub}
-            </p>
+            <p style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4}}>{k.sub}</p>
           </div>
         ))}
       </motion.div>
+
     </header>
   );
 }
