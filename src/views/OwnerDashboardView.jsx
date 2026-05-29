@@ -1,7 +1,7 @@
 // src/views/OwnerDashboardView.jsx
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useScroll, useTransform, animate } from "framer-motion";
 import {
   collection, query, where, onSnapshot,
   getDocs, addDoc, updateDoc, doc, deleteDoc,
@@ -665,7 +665,7 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
 }
 
 /* ─── BUTTERY SMOOTH CSS STICKY HEADER ───────────────────── */
-function Header({ ownerName, rooms, loading, scrollY }) {
+function LegacyHeader({ ownerName, rooms, loading, scrollY }) {
   const rev      = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
   const pend     = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
   const total    = rooms.length;
@@ -788,6 +788,132 @@ function Header({ ownerName, rooms, loading, scrollY }) {
           ))}
         </div>
       </div>
+    </header>
+  );
+}
+
+function Header({ ownerName, rooms, loading, scrollY }) {
+  const rev      = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
+  const pend     = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
+  const total    = rooms.length;
+  const occupied = rooms.filter(r=>r.tenantName?.trim()).length;
+  const [g]      = greet();
+  const firstName = ownerName?.split(" ")[0] || "Owner";
+  const initials  = ownerName ? ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase() : "RK";
+
+  const expandedOpacity = useTransform(scrollY, [0, 72], [1, 0]);
+  const expandedY       = useTransform(scrollY, [0, 96], [0, -32]);
+  const compactOpacity  = useTransform(scrollY, [36, 96], [0, 1]);
+  const compactY        = useTransform(scrollY, [36, 96], [-10, 0]);
+  const compactEvents   = useTransform(scrollY, v => v > 48 ? "auto" : "none");
+  const expandedEvents  = useTransform(scrollY, v => v > 72 ? "none" : "auto");
+
+  return (
+    <header style={{background:C.dark,position:"relative",overflow:"clip"}}>
+      <div style={{position:"absolute",width:180,height:180,borderRadius:"50%",
+        background:"rgba(99,102,241,.18)",top:-60,right:-50,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",width:100,height:100,borderRadius:"50%",
+        background:"rgba(99,102,241,.1)",bottom:0,left:-20,pointerEvents:"none"}}/>
+
+      <motion.div style={{
+        position:"sticky",
+        top:0,
+        zIndex:100,
+        padding:"max(12px, env(safe-area-inset-top)) 16px 10px",
+        minHeight:60,
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"space-between",
+        background:"rgba(26,26,46,.78)",
+        backdropFilter:"blur(18px)",
+        WebkitBackdropFilter:"blur(18px)",
+        borderBottom:"1px solid rgba(255,255,255,.08)",
+        opacity:compactOpacity,
+        y:compactY,
+        pointerEvents:compactEvents,
+        willChange:"opacity, transform",
+      }}>
+        <div style={{flex:1,minWidth:0,marginRight:12}}>
+          <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {firstName}
+          </p>
+          <p style={{fontSize:11,color:"rgba(255,255,255,.58)",fontWeight:600,marginTop:2}}>
+            {inr(rev)} · {occupied}/{total} occupied
+          </p>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+          <Bell rooms={rooms}/>
+        </div>
+      </motion.div>
+
+      <motion.div style={{
+        padding:"6px 16px 20px",
+        position:"relative",
+        zIndex:1,
+        opacity:expandedOpacity,
+        y:expandedY,
+        pointerEvents:expandedEvents,
+        willChange:"opacity, transform",
+      }}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:12}}>
+          <div style={{minWidth:0}}>
+            <p style={{fontSize:13,color:"rgba(255,255,255,.55)",fontWeight:500,marginBottom:2}}>
+              Good {g},
+            </p>
+            <p style={{fontFamily:"'Nunito',sans-serif",fontSize:24,fontWeight:900,
+              color:"white",lineHeight:1.08}}>
+              {firstName} <span style={{color:C.vi2}}>👋</span>
+            </p>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <Bell rooms={rooms}/>
+            <div style={{width:40,height:40,borderRadius:14,background:C.ind,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontWeight:800,fontSize:13,color:"white",position:"relative"}}>
+              {initials}
+              <div style={{position:"absolute",inset:-2,borderRadius:16,
+                border:`1.5px solid ${C.vi2}`,opacity:.45,pointerEvents:"none"}}/>
+            </div>
+          </div>
+        </div>
+
+        <div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
+          borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:9,
+          marginBottom:16}}>
+          <i className="fa-solid fa-magnifying-glass"
+            style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
+          <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
+            Search rooms, tenants...
+          </span>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+          {[
+            {label:"Total Rooms", val:total,    sub:`${total-occupied} vacant`,                                                  bg:"#6366F1", icon:"fa-solid fa-building"},
+            {label:"Tenants",     val:occupied, sub:`${rooms.filter(r=>r.status==="paid").length} paid`,                         bg:"#0F9D8B", icon:"fa-solid fa-users"},
+            {label:"Collected",   val:inr(rev), sub:"This month",                                                                bg:"#F59E0B", icon:"fa-solid fa-indian-rupee-sign", mono:true},
+            {label:"Dues Left",   val:inr(pend),sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} tenants`, bg:"#EF4444", icon:"fa-solid fa-clock", mono:true},
+          ].map(k=>(
+            <div key={k.label} style={{borderRadius:18,padding:"14px",position:"relative",
+              overflow:"hidden",background:k.bg,minHeight:90}}>
+              <div style={{position:"absolute",right:10,top:10,width:34,height:34,borderRadius:11,
+                background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <i className={k.icon} style={{fontSize:15,color:"rgba(255,255,255,.9)"}}/>
+              </div>
+              <div style={{position:"absolute",width:65,height:65,borderRadius:"50%",
+                background:"rgba(255,255,255,.07)",bottom:-18,left:-10}}/>
+              <p style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.7)",
+                textTransform:"uppercase",letterSpacing:".3px",marginBottom:6}}>{k.label}</p>
+              <p style={{fontSize:22,fontWeight:900,color:"white",lineHeight:1,
+                fontFamily:k.mono?"'JetBrains Mono',monospace":"'Nunito',sans-serif"}}>
+                {loading ? "-" : k.val}
+              </p>
+              <p style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4}}>{k.sub}</p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     </header>
   );
 }
@@ -1672,7 +1798,7 @@ export default function OwnerDashboardView() {
   const unsubR   = useRef(null);
   const unsubB   = useRef(null);
   const scrollRef= useRef(null);
-  const scrollY  = useMotionValue(0);
+  const { scrollY } = useScroll({ container: scrollRef });
 
   // ── Toast ───────────────────────────────────────
   const toast = useCallback((msg, type="success") => {
@@ -1805,7 +1931,6 @@ export default function OwnerDashboardView() {
 
         {/* ── STICKY HEADER WRAPPER ── */}
         <div ref={scrollRef}
-          onScroll={e=>scrollY.set(e.currentTarget.scrollTop)}
           style={{flex:1,overflowY:"auto",overflowX:"hidden",background:C.bg,
             WebkitOverflowScrolling:"touch"}}>
 
