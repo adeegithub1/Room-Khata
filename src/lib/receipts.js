@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { currency, formatDate } from './format.js';
 
 export function generateRentReceipt({ room, ownerName = 'RoomKhata Pro', paymentDate = new Date() }) {
