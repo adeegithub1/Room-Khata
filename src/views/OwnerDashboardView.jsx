@@ -801,12 +801,18 @@ function Header({ ownerName, rooms, loading, scrollY }) {
   const firstName = ownerName?.split(" ")[0] || "Owner";
   const initials  = ownerName ? ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase() : "RK";
 
-  const expandedOpacity = useTransform(scrollY, [0, 72], [1, 0]);
-  const expandedY       = useTransform(scrollY, [0, 96], [0, -32]);
-  const compactOpacity  = useTransform(scrollY, [36, 96], [0, 1]);
-  const compactY        = useTransform(scrollY, [36, 96], [-10, 0]);
-  const compactEvents   = useTransform(scrollY, v => v > 48 ? "auto" : "none");
-  const expandedEvents  = useTransform(scrollY, v => v > 72 ? "none" : "auto");
+  const heroOpacity     = useTransform(scrollY, [0, 118], [1, 0]);
+  const heroY           = useTransform(scrollY, [0, 118], [0, -42]);
+  const greetingOpacity = useTransform(scrollY, [0, 44], [1, 0]);
+  const greetingY       = useTransform(scrollY, [0, 64], [0, -18]);
+  const searchOpacity   = useTransform(scrollY, [18, 82], [1, 0]);
+  const searchY         = useTransform(scrollY, [18, 92], [0, -24]);
+  const kpiOpacity      = useTransform(scrollY, [36, 120], [1, 0]);
+  const kpiY            = useTransform(scrollY, [36, 132], [0, -34]);
+  const compactOpacity  = useTransform(scrollY, [58, 118], [0, 1]);
+  const compactY        = useTransform(scrollY, [58, 118], [-14, 0]);
+  const compactEvents   = useTransform(scrollY, v => v > 64 ? "auto" : "none");
+  const expandedEvents  = useTransform(scrollY, v => v > 86 ? "none" : "auto");
 
   return (
     <header style={{background:C.dark,position:"relative",overflow:"clip"}}>
@@ -819,28 +825,36 @@ function Header({ ownerName, rooms, loading, scrollY }) {
         position:"sticky",
         top:0,
         zIndex:100,
-        padding:"max(12px, env(safe-area-inset-top)) 16px 10px",
-        minHeight:60,
+        padding:"max(10px, env(safe-area-inset-top)) 14px 10px",
+        minHeight:62,
         display:"flex",
         alignItems:"center",
         justifyContent:"space-between",
-        background:"rgba(26,26,46,.78)",
-        backdropFilter:"blur(18px)",
-        WebkitBackdropFilter:"blur(18px)",
+        background:"linear-gradient(135deg,rgba(24,24,43,.86),rgba(49,46,129,.72))",
+        backdropFilter:"blur(22px) saturate(1.25)",
+        WebkitBackdropFilter:"blur(22px) saturate(1.25)",
         borderBottom:"1px solid rgba(255,255,255,.08)",
+        boxShadow:"0 16px 36px rgba(8,8,20,.18)",
         opacity:compactOpacity,
         y:compactY,
         pointerEvents:compactEvents,
         willChange:"opacity, transform",
       }}>
-        <div style={{flex:1,minWidth:0,marginRight:12}}>
-          <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1,
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {firstName}
-          </p>
-          <p style={{fontSize:11,color:"rgba(255,255,255,.58)",fontWeight:600,marginTop:2}}>
-            {inr(rev)} · {occupied}/{total} occupied
-          </p>
+        <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0,marginRight:12}}>
+          <div style={{width:34,height:34,borderRadius:12,background:"rgba(255,255,255,.14)",
+            display:"flex",alignItems:"center",justifyContent:"center",color:"white",
+            fontWeight:900,fontSize:12,flexShrink:0,border:"1px solid rgba(255,255,255,.12)"}}>
+            {initials}
+          </div>
+          <div style={{minWidth:0}}>
+            <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1,
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {firstName}
+            </p>
+            <p style={{fontSize:11,color:"rgba(255,255,255,.62)",fontWeight:600,marginTop:2}}>
+              {inr(rev)} · {occupied}/{total} occupied
+            </p>
+          </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <Bell rooms={rooms}/>
@@ -848,17 +862,18 @@ function Header({ ownerName, rooms, loading, scrollY }) {
       </motion.div>
 
       <motion.div style={{
-        padding:"6px 16px 20px",
+        padding:"8px 16px 22px",
         position:"relative",
         zIndex:1,
-        opacity:expandedOpacity,
-        y:expandedY,
+        opacity:heroOpacity,
+        y:heroY,
         pointerEvents:expandedEvents,
         willChange:"opacity, transform",
       }}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:12}}>
+        <motion.div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:12,
+          opacity:greetingOpacity,y:greetingY,willChange:"opacity, transform"}}>
           <div style={{minWidth:0}}>
-            <p style={{fontSize:13,color:"rgba(255,255,255,.55)",fontWeight:500,marginBottom:2}}>
+            <p style={{fontSize:13,color:"rgba(255,255,255,.58)",fontWeight:600,marginBottom:2}}>
               Good {g},
             </p>
             <p style={{fontFamily:"'Nunito',sans-serif",fontSize:24,fontWeight:900,
@@ -876,19 +891,20 @@ function Header({ ownerName, rooms, loading, scrollY }) {
                 border:`1.5px solid ${C.vi2}`,opacity:.45,pointerEvents:"none"}}/>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
+        <motion.div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
           borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:9,
-          marginBottom:16}}>
+          marginBottom:16,opacity:searchOpacity,y:searchY,willChange:"opacity, transform"}}>
           <i className="fa-solid fa-magnifying-glass"
             style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
           <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
             Search rooms, tenants...
           </span>
-        </div>
+        </motion.div>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+        <motion.div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,
+          opacity:kpiOpacity,y:kpiY,willChange:"opacity, transform"}}>
           {[
             {label:"Total Rooms", val:total,    sub:`${total-occupied} vacant`,                                                  bg:"#6366F1", icon:"fa-solid fa-building"},
             {label:"Tenants",     val:occupied, sub:`${rooms.filter(r=>r.status==="paid").length} paid`,                         bg:"#0F9D8B", icon:"fa-solid fa-users"},
@@ -912,7 +928,7 @@ function Header({ ownerName, rooms, loading, scrollY }) {
               <p style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4}}>{k.sub}</p>
             </div>
           ))}
-        </div>
+        </motion.div>
       </motion.div>
     </header>
   );
