@@ -1,19 +1,27 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { getFirestore, serverTimestamp } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+// src/firebase/config.js
+// ─────────────────────────────────────────────────────────────
+// Firebase project: room-khata-43cd3
+// Extracted from original app.js — keep this file out of git
+// (add src/firebase/config.js to your .gitignore if public repo)
+// ─────────────────────────────────────────────────────────────
+
+import { initializeApp }  from "firebase/app";
+import { getFirestore }   from "firebase/firestore";
+import { getAuth }        from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey:            "AIzaSyAp6oj_KE0nxfInqVG44P42pYljKVHKaHo",
+  authDomain:        "room-khata-43cd3.firebaseapp.com",
+  projectId:         "room-khata-43cd3",
+  storageBucket:     "room-khata-43cd3.firebasestorage.app",
+  messagingSenderId: "739355882640",
+  appId:             "1:739355882640:web:8bd01c7b05d8129fa29415",
+  measurementId:     "G-3ZJJ8NGT56",
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export { RecaptchaVerifier, signInWithPhoneNumber, serverTimestamp };
+// Initialise Firebase (singleton — safe to import from anywhere)
+const firebaseApp = initializeApp(firebaseConfig);
+
+export const db   = getFirestore(firebaseApp);
+export const auth = getAuth(firebaseApp);
+export default firebaseApp;
