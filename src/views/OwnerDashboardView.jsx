@@ -9,6 +9,7 @@ import {
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase/config";
 import { useApp } from "../context/AppContext";
+import { AssignTenantSheet } from './AssignTenantSheet';
 
 /* ─── Brand tokens — from reference UI ──────────────────── */
 const C = {
