@@ -2259,9 +2259,25 @@ export default function OwnerDashboardView() {
 
   return (
     <>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        /* Scrollbar styling */
+        div::-webkit-scrollbar {
+          width: 8px;
+        }
+        div::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        div::-webkit-scrollbar-thumb {
+          background: ${C.ind}40;
+          border-radius: 4px;
+        }
+        div::-webkit-scrollbar-thumb:hover {
+          background: ${C.ind}60;
+        }
+      `}</style>
 
-      <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",
+      <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",
         background:C.bg,fontFamily:"'Poppins',-apple-system,sans-serif"}}>
 
         {/* Sticky header */}
@@ -2272,8 +2288,10 @@ export default function OwnerDashboardView() {
           onScroll={e=>scrollY.set(e.currentTarget.scrollTop)}
           style={{flex:1,overflowY:"auto",overflowX:"hidden",background:C.bg,
             WebkitOverflowScrolling:"touch",
-            // Minimum height ensures header always collapses fully
-            minHeight:0}}>
+            scrollBehavior:"smooth",
+            minHeight:0,
+            scrollbarWidth:"thin",
+            scrollbarColor:`${C.ind}40 transparent`}}>
 
           <div style={{padding:"16px 14px 28px"}}>
 
