@@ -314,21 +314,23 @@ function OwnerSignupStep({ onBack, onSwitchLogin }) {
 
 /* ─── Step 2c: Tenant Login ───────────────────────────────── */
 function TenantStep({ onBack }) {
-  const [phone,   setPhone]   = useState("");
-  const [code,    setCode]    = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
+  const [name,   setName]   = useState("");
+  const [phone,  setPhone]  = useState("");
+  const [code,   setCode]   = useState("");
+  const [loading,setLoading]= useState(false);
+  const [error,  setError]  = useState("");
   const { setUserRole } = useApp();
   const navigate = useNavigate();
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError("");
+    if (!name.trim())        { setError("कृपया अपना नाम डालें।"); return; }
     if (phone.length !== 10) { setError("कृपया valid 10-digit WhatsApp number डालें।"); return; }
     if (!code.trim())        { setError("कृपया Connection Code डालें।"); return; }
     setLoading(true);
     try {
-      // 1. Find room with this connection code — anyone signed in can query
+      // 1. Find room with this connection code
       const snap = await getDocs(
         query(collection(db, "rooms"), where("connectionCode", "==", code.trim().toUpperCase()))
       );
@@ -347,22 +349,24 @@ function TenantStep({ onBack }) {
       const tenantUid = cred.user.uid;
 
       // 3. Save tenant profile FIRST (doc id = tenantUid)
-      //    This is how AppContext.resolveRole will find the tenant on next load
       await setDoc(doc(db, "tenantProfiles", tenantUid), {
         phone,
+        name:    name.trim(),
         roomId,
-        ownerId:   roomData.ownerId || "",
-        joinedAt:  new Date().toISOString(),
+        ownerId: roomData.ownerId || "",
+        joinedAt: new Date().toISOString(),
       }, { merge: true });
 
-      // 4. Link tenant UID + phone to the room
+      // 4. Update room — set tenantName so owner dashboard shows room as OCCUPIED
       await updateDoc(doc(db, "rooms", roomId), {
+        tenantName:  name.trim(),   // ← THIS is what shows room as occupied
         tenantPhone: phone,
         tenantUid:   tenantUid,
-        status:      roomData.status || "pending",
+        status:      roomData.status === "paid" ? "pending" : (roomData.status || "pending"),
+        assignedAt:  new Date().toISOString(),
       });
 
-      // 5. Set role in context and navigate
+      // 5. Set role and navigate
       setUserRole("tenant");
       navigate("/tenant", { replace: true });
 
@@ -370,7 +374,7 @@ function TenantStep({ onBack }) {
       console.error("Tenant login error:", err);
       setError(
         err.code === "permission-denied"
-          ? "Permission error — please contact support."
+          ? "Permission error — Firestore rules deploy करें।"
           : err.message || "Something went wrong. Please try again."
       );
     }
@@ -403,6 +407,8 @@ function TenantStep({ onBack }) {
       <div style={{background:"white",borderRadius:20,padding:"20px 18px",
         border:"1.5px solid #FED7AA",boxShadow:"0 8px 32px rgba(255,107,53,.08)"}}>
         <form onSubmit={handleSubmit}>
+          <Field label="आपका नाम" value={name} onChange={setName}
+            placeholder="Ravi Kumar" required/>
           <Field label="WhatsApp Number" type="tel" value={phone}
             onChange={v=>setPhone(v.replace(/\D/g,"").slice(0,10))}
             placeholder="10-digit mobile number" required prefix="+91"/>
