@@ -2017,6 +2017,11 @@ export default function OwnerDashboardView() {
   const [search,    setSearch]     = useState("");
   const [tab,       setTab]        = useState("home");
   const [toasts,    setToasts]     = useState([]);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackName, setFeedbackName] = useState("");
+  const [feedbackEmail, setFeedbackEmail] = useState("");
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const [addBldg,    setAddBldg]    = useState(false);
   const [addRoomBid, setAddRoomBid] = useState(null);
@@ -2044,6 +2049,41 @@ export default function OwnerDashboardView() {
     setToasts(p => [...p, {id, msg, type}]);
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3000);
   }, []);
+
+  // ── Feedback submission handler ───────────────────────────
+  const handleFeedbackSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!feedbackName.trim() || !feedbackEmail.trim() || !feedbackMsg.trim()) {
+      toast("Please fill in all fields", "error");
+      return;
+    }
+    setFeedbackLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("access_key", "4cb17617-20f4-4add-9d6d-26bd1fff23a0");
+      formData.append("name", feedbackName.trim());
+      formData.append("email", feedbackEmail.trim());
+      formData.append("message", feedbackMsg.trim());
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast("✉️ Feedback sent successfully!");
+        setFeedbackOpen(false);
+        setFeedbackName("");
+        setFeedbackEmail("");
+        setFeedbackMsg("");
+      } else {
+        toast("Failed to send feedback", "error");
+      }
+    } catch (err) {
+      toast("Error sending feedback", "error");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }, [feedbackName, feedbackEmail, feedbackMsg, toast]);
 
   // ── Delete handlers ───────────────────────────────────────
   const handleDelete = useCallback((type, id, name) => {
@@ -2338,7 +2378,84 @@ export default function OwnerDashboardView() {
           <YouSheet key="you" ownerName={ownerName} authUser={authUser}
             onClose={()=>{setYouOpen(false);setTab("home");}} onAction={handleYou}/>
         )}
+        {feedbackOpen&&(
+          <motion.div key="feedback" variants={vFade} initial="hidden" animate="visible" exit="exit"
+            style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div style={{position:"absolute",inset:0,background:"rgba(7,5,15,.72)"}} onClick={()=>setFeedbackOpen(false)}/>
+            <motion.div variants={vScale} initial="hidden" animate="visible" exit="exit"
+              style={{position:"relative",zIndex:1,background:"#fff",borderRadius:20,padding:28,maxWidth:420,width:"calc(100% - 32px)",
+                boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}>
+              <p style={{fontWeight:900,fontSize:20,color:C.t1,marginBottom:4}}>Share Feedback</p>
+              <p style={{fontSize:13,color:C.t2,marginBottom:20}}>Help us improve your experience</p>
+              <form onSubmit={handleFeedbackSubmit} style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div>
+                  <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
+                    textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Name *</label>
+                  <input type="text" value={feedbackName} onChange={e=>setFeedbackName(e.target.value)}
+                    placeholder="Your name" disabled={feedbackLoading}
+                    style={{width:"100%",padding:"12px 14px",borderRadius:12,fontSize:14,fontWeight:500,outline:"none",
+                      fontFamily:"'Poppins',sans-serif",color:C.t1,background:"#F5F3FF",
+                      border:`1.5px solid ${C.bdr}`,boxSizing:"border-box",
+                      transition:"all .2s"}} onFocus={e=>{e.target.style.background="#fff";e.target.style.borderColor=C.brand;}}
+                    onBlur={e=>{e.target.style.background="#F5F3FF";e.target.style.borderColor=C.bdr;}}/>
+                </div>
+                <div>
+                  <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
+                    textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Email *</label>
+                  <input type="email" value={feedbackEmail} onChange={e=>setFeedbackEmail(e.target.value)}
+                    placeholder="your@email.com" disabled={feedbackLoading}
+                    style={{width:"100%",padding:"12px 14px",borderRadius:12,fontSize:14,fontWeight:500,outline:"none",
+                      fontFamily:"'Poppins',sans-serif",color:C.t1,background:"#F5F3FF",
+                      border:`1.5px solid ${C.bdr}`,boxSizing:"border-box",
+                      transition:"all .2s"}} onFocus={e=>{e.target.style.background="#fff";e.target.style.borderColor=C.brand;}}
+                    onBlur={e=>{e.target.style.background="#F5F3FF";e.target.style.borderColor=C.bdr;}}/>
+                </div>
+                <div>
+                  <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
+                    textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Message *</label>
+                  <textarea value={feedbackMsg} onChange={e=>setFeedbackMsg(e.target.value)}
+                    placeholder="Tell us what you think…" disabled={feedbackLoading}
+                    style={{width:"100%",padding:"12px 14px",borderRadius:12,fontSize:14,fontWeight:500,outline:"none",
+                      fontFamily:"'Poppins',sans-serif",color:C.t1,background:"#F5F3FF",
+                      border:`1.5px solid ${C.bdr}`,boxSizing:"border-box",minHeight:100,resize:"vertical",
+                      transition:"all .2s"}} onFocus={e=>{e.target.style.background="#fff";e.target.style.borderColor=C.brand;}}
+                    onBlur={e=>{e.target.style.background="#F5F3FF";e.target.style.borderColor=C.bdr;}}/>
+                </div>
+                <div style={{display:"flex",gap:10,marginTop:8}}>
+                  <button type="button" onClick={()=>setFeedbackOpen(false)} disabled={feedbackLoading}
+                    style={{flex:1,padding:"12px",borderRadius:12,border:`1.5px solid ${C.bdr}`,
+                      background:"white",color:C.t1,fontWeight:700,fontSize:14,cursor:"pointer",
+                      fontFamily:"'Poppins',sans-serif",transition:"all .2s",opacity:feedbackLoading?.6:1}}>
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={feedbackLoading}
+                    style={{flex:1,padding:"12px",borderRadius:12,border:"none",background:G.brand,
+                      color:"white",fontWeight:700,fontSize:14,cursor:"pointer",
+                      fontFamily:"'Poppins',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                      transition:"all .2s",opacity:feedbackLoading?.7:1}}>
+                    {feedbackLoading?(
+                      <svg style={{width:16,height:16,animation:"spin 1s linear infinite"}} viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12"/>
+                      </svg>
+                    ):"Send"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
+
+      {/* Floating Feedback Button */}
+      <motion.button
+        onClick={()=>setFeedbackOpen(true)}
+        whileHover={{scale:1.1}} whileTap={{scale:.95}}
+        style={{position:"fixed",bottom:80,right:20,zIndex:100,width:56,height:56,borderRadius:"50%",
+          border:"none",background:G.brand,color:"white",cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          boxShadow:"0 8px 24px rgba(99,102,241,.35)",fontWeight:700,fontSize:20}}>
+        💬
+      </motion.button>
     </>
   );
 }
