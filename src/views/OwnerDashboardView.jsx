@@ -777,89 +777,183 @@ function YouSheet({ ownerName, authUser, onClose, onAction }) {
 }
 
 
-/* ─── Header — static, zero motion ──────────────────────── */
-function Header({ ownerName, rooms, loading }) {
-  const rev  = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
-  const pend = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
-  const total = rooms.length;
-  const occ   = rooms.filter(r=>r.tenantName?.trim()).length;
+/* ─── Finance Header ─────────────────────────────────────── */
+function Header({ ownerName, rooms, loading, scrollY }) {
+  const rev      = useMemo(()=>rooms.reduce((s,r)=>s+(r.amountPaid||0),0),[rooms]);
+  const pend     = useMemo(()=>rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).reduce((s,r)=>s+(r.balanceDue||r.rent||0),0),[rooms]);
+  const total    = rooms.length;
+  const occupied = rooms.filter(r=>r.tenantName?.trim()).length;
+  const [g]      = greet();
+
+  // ── Scroll transforms ─────────────────────────────────────
+  // CS→CE: content fades + slides up
+  // CE→CE: maxHeight collapses so header physically shrinks
+  const CS = 10, CE = 90;
+
+  // Visual: opacity + slight upward move (GPU only — no layout)
+  const exOp  = useTransform(scrollY, [CS, CE],  [1, 0]);
+  const exY   = useTransform(scrollY, [CS, CE],  [0, -8]);
+  const miOp  = useTransform(scrollY, [CS+15, CE], [0, 1]);
+
+  // Layout: maxHeight drives actual space collapse (safe — fixed px range)
+  // greeting + search + pill section ≈ 120px
+  const greetMax = useTransform(scrollY, [CS, CE], ["130px", "0px"]);
+  // KPI grid ≈ 220px total with padding
+  const kpiMax   = useTransform(scrollY, [CS, CE], ["240px", "0px"]);
+  const kpiPadT  = useTransform(scrollY, [CS, CE], ["14px",  "0px"]);
+  const kpiPadB  = useTransform(scrollY, [CS, CE], ["18px",  "0px"]);
+
   return (
-    <header style={{background:C.dark,flexShrink:0,position:"relative",overflow:"hidden",
-      paddingTop:"max(44px,env(safe-area-inset-top))"}}>
-      <div style={{position:"absolute",width:160,height:160,borderRadius:"50%",
-        background:"rgba(99,102,241,.18)",top:-50,right:-40,pointerEvents:"none"}}/>
-      <div style={{position:"absolute",width:90,height:90,borderRadius:"50%",
-        background:"rgba(99,102,241,.1)",bottom:-25,left:-15,pointerEvents:"none"}}/>
-      <div style={{position:"relative",zIndex:1,padding:"12px 16px 16px"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-          <div>
-            <p style={{fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:500,marginBottom:2}}>Good {greet()} 👋</p>
-            <p style={{fontFamily:"'Nunito',sans-serif",fontSize:20,fontWeight:900,color:"white",lineHeight:1}}>
-              {ownerName?.split(" ")[0]||"Owner"}
-            </p>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <Bell rooms={rooms}/>
-            <div style={{width:38,height:38,borderRadius:13,background:C.ind,flexShrink:0,
-              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:"white"}}>
-              {ownerName?ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase():"RK"}
-            </div>
-          </div>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
-          {[
-            {l:"Total Rooms",v:String(total),   sub:`${total-occ} vacant`,   bg:"#6366F1",ic:"fa-solid fa-building"},
-            {l:"Tenants",    v:String(occ),     sub:`${rooms.filter(r=>r.status==="paid").length} paid`, bg:"#0F9D8B",ic:"fa-solid fa-users"},
-            {l:"Collected",  v:inr(rev),         sub:"This month",             bg:"#F59E0B",ic:"fa-solid fa-indian-rupee-sign",mono:true},
-            {l:"Dues Left",  v:inr(pend),        sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} pending`,bg:"#EF4444",ic:"fa-solid fa-clock",mono:true},
-          ].map(k=>(
-            <div key={k.l} style={{borderRadius:16,padding:"12px 14px",position:"relative",overflow:"hidden",background:k.bg}}>
-              <div style={{position:"absolute",right:10,top:10,width:30,height:30,borderRadius:9,
-                background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <i className={k.ic} style={{fontSize:13,color:"rgba(255,255,255,.9)"}}/>
-              </div>
-              <div style={{position:"absolute",width:55,height:55,borderRadius:"50%",
-                background:"rgba(255,255,255,.07)",bottom:-14,left:-7}}/>
-              <p style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,.65)",textTransform:"uppercase",letterSpacing:".3px",marginBottom:5}}>{k.l}</p>
-              <p style={{fontSize:19,fontWeight:900,color:"white",lineHeight:1,
-                fontFamily:k.mono?"'JetBrains Mono',monospace":"'Nunito',sans-serif"}}>
-                {loading?"—":k.v}
+    <header style={{
+      background: C.dark, flexShrink:0, position:"relative", overflow:"hidden",
+      paddingTop:"max(44px,env(safe-area-inset-top))",
+      transform:"translateZ(0)", willChange:"transform",
+    }}>
+      {/* Orbs */}
+      <div style={{position:"absolute",width:180,height:180,borderRadius:"50%",
+        background:"rgba(99,102,241,.18)",top:-60,right:-50,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",width:100,height:100,borderRadius:"50%",
+        background:"rgba(99,102,241,.1)",bottom:-30,left:-20,pointerEvents:"none"}}/>
+
+      <div style={{position:"relative",zIndex:1,padding:"12px 16px 0"}}>
+
+        {/* ── Always-visible top bar ── */}
+        <div style={{display:"flex",alignItems:"center",
+          justifyContent:"space-between",marginBottom:12}}>
+
+          {/* Left: expanded label / collapsed mini name */}
+          <div style={{flex:1,minWidth:0,marginRight:12,position:"relative",height:38}}>
+            <motion.div style={{opacity:exOp,y:exY,
+              position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
+              <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:500,marginBottom:2}}>
+                Your property
               </p>
-              <p style={{fontSize:10,color:"rgba(255,255,255,.55)",marginTop:3}}>{k.sub}</p>
+              <div style={{display:"flex",alignItems:"center",gap:4}}>
+                <i className="fa-solid fa-map-pin" style={{fontSize:12,color:C.vi2}}/>
+                <p style={{fontSize:14,fontWeight:700,color:"white"}}>
+                  {ownerName ? `${ownerName.split(" ")[0]}'s Properties` : "Properties"}
+                </p>
+              </div>
+            </motion.div>
+            <motion.div style={{opacity:miOp,
+              position:"absolute",top:0,left:0,willChange:"opacity,transform"}}>
+              <p style={{fontWeight:900,fontSize:16,color:"white",lineHeight:1.1}}>
+                {ownerName?.split(" ")[0]||"Dashboard"}
+              </p>
+              <p style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:600,marginTop:2}}>
+                {inr(rev)} · {occupied}/{total} occupied
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Right: bell + avatar */}
+          <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <Bell rooms={rooms}/>
+            <div style={{width:38,height:38,borderRadius:13,background:C.ind,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontWeight:800,fontSize:13,color:"white",position:"relative"}}>
+              {ownerName ? ownerName.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase() : "RK"}
+              <div style={{position:"absolute",inset:-2,borderRadius:15,
+                border:`1.5px solid ${C.vi2}`,opacity:.45,pointerEvents:"none"}}/>
             </div>
-          ))}
+          </div>
         </div>
+
+        {/* ── Collapsing: greeting + search bar ──
+            maxHeight drives layout collapse; overflow:hidden clips content cleanly */}
+        <motion.div style={{
+          opacity: exOp,
+          y:       exY,
+          maxHeight: greetMax,
+          overflow: "hidden",
+          willChange: "opacity,transform,max-height",
+        }}>
+          <p style={{fontSize:13,color:"rgba(255,255,255,.55)",fontWeight:500,marginBottom:2}}>
+            Good {g},
+          </p>
+          <p style={{fontFamily:"'Nunito',sans-serif",fontSize:22,fontWeight:900,
+            color:"white",lineHeight:1.1,marginBottom:12}}>
+            {ownerName?.split(" ")[0]||"Owner"} <span style={{color:C.vi2}}>👋</span>
+          </p>
+          <div style={{background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.15)",
+            borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:9,
+            marginBottom:12}}>
+            <i className="fa-solid fa-magnifying-glass"
+              style={{fontSize:15,color:"rgba(255,255,255,.35)"}}/>
+            <span style={{fontSize:13,color:"rgba(255,255,255,.4)",fontWeight:500}}>
+              Search rooms, tenants…
+            </span>
+          </div>
+        </motion.div>
+
       </div>
+
+      {/* ── KPI cards — also collapses on scroll ── */}
+      <motion.div style={{
+        opacity:   exOp,
+        maxHeight: kpiMax,
+        paddingTop:    kpiPadT,
+        paddingBottom: kpiPadB,
+        paddingLeft:  "14px",
+        paddingRight: "14px",
+        overflow: "hidden",
+        display:  "grid",
+        gridTemplateColumns: "repeat(2,1fr)",
+        gap: 10,
+        willChange: "opacity,max-height",
+      }}>
+        {[
+          {label:"Total Rooms", val:total,    sub:`${total-occupied} vacant`,                                                  bg:"#6366F1", icon:"fa-solid fa-building"},
+          {label:"Tenants",     val:occupied, sub:`${rooms.filter(r=>r.status==="paid").length} paid`,                         bg:"#0F9D8B", icon:"fa-solid fa-users"},
+          {label:"Collected",   val:inr(rev), sub:"This month",                                                                bg:"#F59E0B", icon:"fa-solid fa-indian-rupee-sign", mono:true},
+          {label:"Dues Left",   val:inr(pend),sub:`${rooms.filter(r=>["pending","partial"].includes(r.status)&&r.tenantName?.trim()).length} tenants`, bg:"#EF4444", icon:"fa-solid fa-clock", mono:true},
+        ].map(k=>(
+          <div key={k.label} style={{borderRadius:18,padding:"14px",position:"relative",
+            overflow:"hidden",background:k.bg,minHeight:90}}>
+            <div style={{position:"absolute",right:10,top:10,width:34,height:34,borderRadius:11,
+              background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <i className={k.icon} style={{fontSize:15,color:"rgba(255,255,255,.9)"}}/>
+            </div>
+            <div style={{position:"absolute",width:65,height:65,borderRadius:"50%",
+              background:"rgba(255,255,255,.07)",bottom:-18,left:-10}}/>
+            <p style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,.7)",
+              textTransform:"uppercase",letterSpacing:".3px",marginBottom:6}}>{k.label}</p>
+            <p style={{fontSize:22,fontWeight:900,color:"white",lineHeight:1,
+              fontFamily:k.mono?"'JetBrains Mono',monospace":"'Nunito',sans-serif"}}>
+              {loading ? "—" : k.val}
+            </p>
+            <p style={{fontSize:10,color:"rgba(255,255,255,.6)",marginTop:4}}>{k.sub}</p>
+          </div>
+        ))}
+      </motion.div>
+
     </header>
   );
 }
-
-
 /* ─── Quick action tiles ─────────────────────────────────── */
 function QuickTiles({ onAnalytics, onExpenses, onRemind }) {
   const tiles = [
-    {ic:"fa-solid fa-chart-line",l:"Analytics",bg:"#EEF2FF",ic2:C.ind,  fn:onAnalytics},
-    {ic:"fa-solid fa-receipt",   l:"Expenses", bg:"#FEF3C7",ic2:"#B45309",fn:onExpenses},
-    {ic:"fa-brands fa-whatsapp", l:"Remind",   bg:"#DCFCE7",ic2:"#15803D",fn:onRemind},
-    {ic:"fa-solid fa-file-pdf",  l:"Report",   bg:"#DBEAFE",ic2:"#1D4ED8",fn:()=>{}},
+    {ic:"fa-solid fa-chart-line", l:"Analytics", bg:"#EEF2FF", ic2:"#6366F1", fn:onAnalytics},
+    {ic:"fa-solid fa-receipt",    l:"Expenses",  bg:"#FEF3C7", ic2:"#B45309", fn:onExpenses},
+    {ic:"fa-brands fa-whatsapp",  l:"Remind",    bg:"#DCFCE7", ic2:"#15803D", fn:onRemind},
+    {ic:"fa-solid fa-file-pdf",   l:"Report",    bg:"#DBEAFE", ic2:"#1D4ED8", fn:()=>{}},
   ];
   return (
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
+    <motion.div variants={stagger(.05)} initial="hidden" animate="visible"
+      style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:20}}>
       {tiles.map(t=>(
-        <button key={t.l} onClick={t.fn}
-          style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"13px 4px 11px",
-            borderRadius:16,background:C.card,border:`1.5px solid ${C.bdr}`,cursor:"pointer",
-            boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}
-          onPointerDown={e=>e.currentTarget.style.opacity=".7"}
-          onPointerUp={e=>e.currentTarget.style.opacity="1"}>
-          <div style={{width:40,height:40,borderRadius:13,background:t.bg,
-            display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
-            <i className={t.ic} style={{fontSize:17,color:t.ic2}}/>
+        <motion.button key={t.l} variants={vScale} whileTap={{scale:.88}} onClick={t.fn}
+          style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"14px 4px 12px",
+            borderRadius:18,background:C.card,border:`1.5px solid ${C.bdr}`,
+            cursor:"pointer",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+          <div style={{width:42,height:42,borderRadius:14,background:t.bg,
+            display:"flex",alignItems:"center",justifyContent:"center",marginBottom:7}}>
+            <i className={t.ic} style={{fontSize:18,color:t.ic2}}/>
           </div>
-          <span style={{fontSize:10,fontWeight:700,color:C.t2}}>{t.l}</span>
-        </button>
+          <span style={{fontSize:11,fontWeight:700,color:C.t2}}>{t.l}</span>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -1950,6 +2044,220 @@ function RoomDetailSheet({ room, buildings, onClose, onEdit, onToggle, onAddBill
   );
 }
 
+/* ─── Receive Payment Sheet ──────────────────────────────── */
+function ReceivePaymentSheet({ room, onClose, toast }) {
+  const totalDue = (room.rent||0) + (room.electricityBill||0);
+  const balance  = room.balanceDue > 0 ? room.balanceDue : totalDue;
+
+  const [amount, setAmount] = useState(String(balance));
+  const [note,   setNote]   = useState("");
+  const [busy,   setBusy]   = useState(false);
+
+  const paid    = parseInt(amount, 10) || 0;
+  const isFullPay  = paid >= balance;
+  const isPartial  = paid > 0 && paid < balance;
+  const remaining  = Math.max(0, balance - paid);
+
+  const go = async e => {
+    e.preventDefault();
+    if (!paid || paid <= 0) return;
+    setBusy(true);
+    try {
+      const now = new Date().toISOString();
+
+      if (isFullPay) {
+        // Full payment
+        await updateDoc(doc(db, "rooms", room.id), {
+          status:     "paid",
+          amountPaid: totalDue,
+          balanceDue: 0,
+          paidDate:   now,
+        });
+        // Record in history
+        await addDoc(collection(db, "paymentHistory"), {
+          roomId:     room.id,
+          ownerId:    room.ownerId,
+          tenantName: room.tenantName || "",
+          amount:     paid,
+          rent:       room.rent || 0,
+          electricity:room.electricityBill || 0,
+          month:      new Date().toLocaleDateString("en-IN", {month:"long",year:"numeric"}),
+          paymentApp: "cash",
+          txnNote:    note.trim() || "Cash payment",
+          status:     "paid",
+          paidAt:     now,
+          createdAt:  now,
+        });
+        toast(`✓ Full payment ₹${paid.toLocaleString("en-IN")} received!`);
+      } else {
+        // Partial payment
+        const prevPaid = room.amountPaid || 0;
+        await updateDoc(doc(db, "rooms", room.id), {
+          status:     "partial",
+          amountPaid: prevPaid + paid,
+          balanceDue: remaining,
+          paidDate:   now,
+        });
+        await addDoc(collection(db, "paymentHistory"), {
+          roomId:     room.id,
+          ownerId:    room.ownerId,
+          tenantName: room.tenantName || "",
+          amount:     paid,
+          rent:       room.rent || 0,
+          electricity:room.electricityBill || 0,
+          month:      new Date().toLocaleDateString("en-IN", {month:"long",year:"numeric"}),
+          paymentApp: "cash",
+          txnNote:    note.trim() || "Partial payment",
+          status:     "partial",
+          paidAt:     now,
+          createdAt:  now,
+        });
+        toast(`◑ Partial ₹${paid.toLocaleString("en-IN")} received. Due: ₹${remaining.toLocaleString("en-IN")}`);
+      }
+      onClose();
+    } catch(e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+
+  return (
+    <Sheet onClose={onClose} title="">
+      <div style={{padding:"14px 18px 0"}}>
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18}}>
+          {room.tenantPhoto
+            ? <img src={room.tenantPhoto} alt="" style={{width:48,height:48,borderRadius:14,objectFit:"cover",flexShrink:0}}/>
+            : <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${C.ind},${C.ind2})`,
+                flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
+                color:"white",fontWeight:900,fontSize:16}}>{init(room.tenantName)}</div>
+          }
+          <div style={{flex:1}}>
+            <p style={{fontFamily:"'Nunito',sans-serif",fontWeight:900,fontSize:18,color:C.t1}}>
+              Receive Payment
+            </p>
+            <p style={{fontSize:12,color:C.t3,marginTop:2}}>
+              {room.tenantName} · Room {room.roomNo}
+            </p>
+          </div>
+        </div>
+
+        {/* Due summary */}
+        <div style={{background:C.bg,borderRadius:16,padding:"12px 16px",
+          marginBottom:16,border:`1.5px solid ${C.bdr}`,
+          display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <p style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:"uppercase",
+              letterSpacing:".06em",marginBottom:3}}>Total Due</p>
+            <p style={{fontFamily:"'Nunito',sans-serif",fontSize:22,fontWeight:900,
+              color:"#EF4444"}}>{inr(balance)}</p>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <p style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:"uppercase",
+              letterSpacing:".06em",marginBottom:3}}>Breakdown</p>
+            <p style={{fontSize:12,fontWeight:600,color:C.t2}}>Rent {inr(room.rent||0)}</p>
+            {(room.electricityBill||0)>0&&<p style={{fontSize:12,fontWeight:600,color:"#B45309"}}>⚡ {inr(room.electricityBill)}</p>}
+          </div>
+        </div>
+
+        <form onSubmit={go}>
+          {/* Amount input */}
+          <div style={{marginBottom:14}}>
+            <label style={{display:"block",fontSize:11,fontWeight:700,color:C.ind,
+              textTransform:"uppercase",letterSpacing:".07em",marginBottom:6}}>
+              Amount Received (₹) *
+            </label>
+            <div style={{position:"relative"}}>
+              <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
+                fontSize:18,fontWeight:800,color:C.ind,pointerEvents:"none"}}>₹</span>
+              <input type="number" value={amount} min="1" max={balance*2} required
+                onChange={e=>setAmount(e.target.value)}
+                style={{width:"100%",padding:"14px 14px 14px 36px",borderRadius:14,
+                  fontSize:22,fontWeight:800,outline:"none",color:C.t1,
+                  fontFamily:"'JetBrains Mono',monospace",
+                  background:"#F5F3FF",border:`2px solid ${paid>0?C.ind:C.bdr}`,
+                  transition:"all .18s"}}
+                onFocus={e=>e.target.style.borderColor=C.ind}
+                onBlur={e=>e.target.style.borderColor=paid>0?C.ind:C.bdr}/>
+            </div>
+          </div>
+
+          {/* Quick amount buttons */}
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <button type="button" onClick={()=>setAmount(String(balance))}
+              style={{flex:1,padding:"9px",borderRadius:11,border:`1.5px solid ${C.ind}`,
+                cursor:"pointer",background:paid===balance?C.ind:C.indLight,
+                color:paid===balance?"white":C.ind,fontWeight:700,fontSize:12,
+                transition:"all .2s"}}>
+              Full {inr(balance)}
+            </button>
+            {balance >= 2 && (
+              <button type="button" onClick={()=>setAmount(String(Math.round(balance/2)))}
+                style={{flex:1,padding:"9px",borderRadius:11,border:`1.5px solid ${C.bdr}`,
+                  cursor:"pointer",background:C.bg,
+                  color:C.t2,fontWeight:700,fontSize:12}}>
+                Half {inr(Math.round(balance/2))}
+              </button>
+            )}
+            {balance >= 1000 && (
+              <button type="button" onClick={()=>setAmount(String(Math.min(1000,balance)))}
+                style={{flex:1,padding:"9px",borderRadius:11,border:`1.5px solid ${C.bdr}`,
+                  cursor:"pointer",background:C.bg,
+                  color:C.t2,fontWeight:700,fontSize:12}}>
+                ₹1,000
+              </button>
+            )}
+          </div>
+
+          {/* Live preview */}
+          {paid > 0 && (
+            <div style={{borderRadius:14,padding:"12px 16px",marginBottom:14,
+              background: isFullPay
+                ? "linear-gradient(135deg,#DCFCE7,#F0FDF4)"
+                : "linear-gradient(135deg,#FEF3C7,#FFFBEB)",
+              border: `1.5px solid ${isFullPay?"#86EFAC":"#FDE68A"}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <p style={{fontSize:11,fontWeight:700,color:isFullPay?"#14532D":"#92400E",
+                    textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
+                    {isFullPay ? "✓ Full Payment" : "◑ Partial Payment"}
+                  </p>
+                  <p style={{fontSize:18,fontWeight:900,fontFamily:"'Nunito',sans-serif",
+                    color:isFullPay?"#16A34A":"#D97706"}}>
+                    Receiving: {inr(paid)}
+                  </p>
+                </div>
+                {isPartial && (
+                  <div style={{textAlign:"right"}}>
+                    <p style={{fontSize:10,fontWeight:700,color:"#92400E",marginBottom:3}}>BALANCE DUE</p>
+                    <p style={{fontSize:18,fontWeight:900,fontFamily:"'Nunito',sans-serif",
+                      color:"#EF4444"}}>{inr(remaining)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Note */}
+          <SI label="Note (optional)" value={note} onChange={setNote}
+            placeholder="e.g. Cash received, bank transfer"/>
+
+          <SB label={isFullPay
+              ? `✓ Mark Fully Paid — ${inr(paid)}`
+              : isPartial
+              ? `◑ Mark Partial — ${inr(paid)} (Due: ${inr(remaining)})`
+              : "Enter amount above"}
+            loading={busy}
+            grad={isFullPay
+              ? "linear-gradient(135deg,#10B981,#059669)"
+              : isPartial
+              ? "linear-gradient(135deg,#F59E0B,#D97706)"
+              : C.bg}/>
+          <div style={{height:8}}/>
+        </form>
+      </div>
+    </Sheet>
+  );
+}
+
 /* ─── Delete Confirm Sheet ───────────────────────────────── */
 function DeleteConfirmSheet({ target, onClose, onConfirm }) {
   const [busy, setBusy] = useState(false);
@@ -2017,11 +2325,6 @@ export default function OwnerDashboardView() {
   const [search,    setSearch]     = useState("");
   const [tab,       setTab]        = useState("home");
   const [toasts,    setToasts]     = useState([]);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [feedbackName, setFeedbackName] = useState("");
-  const [feedbackEmail, setFeedbackEmail] = useState("");
-  const [feedbackMsg, setFeedbackMsg] = useState("");
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const [addBldg,    setAddBldg]    = useState(false);
   const [addRoomBid, setAddRoomBid] = useState(null);
@@ -2031,6 +2334,7 @@ export default function OwnerDashboardView() {
   const [addBillRoom,  setAddBillRoom]  = useState(null);
   const [assignRoom,   setAssignRoom]   = useState(null);
   const [viewRoom,     setViewRoom]     = useState(null);
+  const [receiveRoom,  setReceiveRoom]  = useState(null); // partial payment sheet
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showExpenses,  setShowExpenses]  = useState(false);
   const [showRemind,      setShowRemind]      = useState(false);
@@ -2042,6 +2346,7 @@ export default function OwnerDashboardView() {
   const unsubR   = useRef(null);
   const unsubB   = useRef(null);
   const scrollRef= useRef(null);
+  const scrollY  = useMotionValue(0);
 
   // ── Toast — must be declared before any callback that uses it ──
   const toast = useCallback((msg, type="success") => {
@@ -2049,41 +2354,6 @@ export default function OwnerDashboardView() {
     setToasts(p => [...p, {id, msg, type}]);
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3000);
   }, []);
-
-  // ── Feedback submission handler ───────────────────────────
-  const handleFeedbackSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    if (!feedbackName.trim() || !feedbackEmail.trim() || !feedbackMsg.trim()) {
-      toast("Please fill in all fields", "error");
-      return;
-    }
-    setFeedbackLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("access_key", "4cb17617-20f4-4add-9d6d-26bd1fff23a0");
-      formData.append("name", feedbackName.trim());
-      formData.append("email", feedbackEmail.trim());
-      formData.append("message", feedbackMsg.trim());
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        body: formData
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast("✉️ Feedback sent successfully!");
-        setFeedbackOpen(false);
-        setFeedbackName("");
-        setFeedbackEmail("");
-        setFeedbackMsg("");
-      } else {
-        toast("Failed to send feedback", "error");
-      }
-    } catch (err) {
-      toast("Error sending feedback", "error");
-    } finally {
-      setFeedbackLoading(false);
-    }
-  }, [feedbackName, feedbackEmail, feedbackMsg, toast]);
 
   // ── Delete handlers ───────────────────────────────────────
   const handleDelete = useCallback((type, id, name) => {
@@ -2141,19 +2411,23 @@ export default function OwnerDashboardView() {
   },[authUser]);
 
   /* Toggle payment */
-  const handleToggle = useCallback(async(roomId,status)=>{
-    const r=rooms.find(x=>x.id===roomId); if(!r) return;
-    try {
-      if(status==="paid"){
-        await updateDoc(doc(db,"rooms",roomId),{status:"pending",amountPaid:0,balanceDue:r.rent||0,paidDate:null});
+  const handleToggle = useCallback(async (roomId, status) => {
+    const r = rooms.find(x => x.id === roomId);
+    if (!r) return;
+    if (status === "paid") {
+      // Undo: reset to pending
+      try {
+        await updateDoc(doc(db,"rooms",roomId), {
+          status:"pending", amountPaid:0,
+          balanceDue:(r.rent||0)+(r.electricityBill||0), paidDate:null,
+        });
         toast("⏳ Marked as pending");
-      } else {
-        const tot=(r.rent||0)+(r.electricityBill||0);
-        await updateDoc(doc(db,"rooms",roomId),{status:"paid",amountPaid:tot,balanceDue:0,paidDate:new Date().toISOString()});
-        toast("✓ Payment received!");
-      }
-    }catch(e){toast(e.message,"error");}
-  },[rooms,toast]);
+      } catch(e) { toast(e.message,"error"); }
+    } else {
+      // Open receive payment sheet
+      setReceiveRoom(r);
+    }
+  }, [rooms, toast]);
 
   /* You-sheet actions */
   const handleYou = useCallback(async action=>{
@@ -2210,12 +2484,15 @@ export default function OwnerDashboardView() {
         background:C.bg,fontFamily:"'Poppins',-apple-system,sans-serif"}}>
 
         {/* Sticky header */}
-        <Header ownerName={ownerName} rooms={rooms} loading={loading}/>
+        <Header ownerName={ownerName} rooms={rooms} loading={loading} scrollY={scrollY}/>
 
         {/* Scrollable body */}
         <div ref={scrollRef}
+          onScroll={e=>scrollY.set(e.currentTarget.scrollTop)}
           style={{flex:1,overflowY:"auto",overflowX:"hidden",background:C.bg,
-            WebkitOverflowScrolling:"touch",minHeight:0}}>
+            WebkitOverflowScrolling:"touch",
+            // Minimum height ensures header always collapses fully
+            minHeight:0}}>
 
           <div style={{padding:"16px 14px 28px"}}>
 
@@ -2355,6 +2632,7 @@ export default function OwnerDashboardView() {
           onInvite={r=>{setViewRoom(null);setInviteRoom(r);}}
           onDelete={(t,id,n)=>{setViewRoom(null);handleDelete(t,id,n);}}
           toast={toast}/>}
+        {receiveRoom&&<ReceivePaymentSheet key="recv" room={receiveRoom} onClose={()=>setReceiveRoom(null)} toast={toast}/>}
         {addBillRoom&&<AddBillSheet key="bill" room={addBillRoom} onClose={()=>setAddBillRoom(null)} toast={toast}/>}
         {assignRoom&&<AssignTenantSheet key="assign" room={assignRoom} onClose={()=>setAssignRoom(null)} toast={toast}/>}
         {deleteTarget&&(
@@ -2378,84 +2656,7 @@ export default function OwnerDashboardView() {
           <YouSheet key="you" ownerName={ownerName} authUser={authUser}
             onClose={()=>{setYouOpen(false);setTab("home");}} onAction={handleYou}/>
         )}
-        {feedbackOpen&&(
-          <motion.div key="feedback" variants={vFade} initial="hidden" animate="visible" exit="exit"
-            style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <div style={{position:"absolute",inset:0,background:"rgba(7,5,15,.72)"}} onClick={()=>setFeedbackOpen(false)}/>
-            <motion.div variants={vScale} initial="hidden" animate="visible" exit="exit"
-              style={{position:"relative",zIndex:1,background:"#fff",borderRadius:20,padding:28,maxWidth:420,width:"calc(100% - 32px)",
-                boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}>
-              <p style={{fontWeight:900,fontSize:20,color:C.t1,marginBottom:4}}>Share Feedback</p>
-              <p style={{fontSize:13,color:C.t2,marginBottom:20}}>Help us improve your experience</p>
-              <form onSubmit={handleFeedbackSubmit} style={{display:"flex",flexDirection:"column",gap:14}}>
-                <div>
-                  <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                    textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Name *</label>
-                  <input type="text" value={feedbackName} onChange={e=>setFeedbackName(e.target.value)}
-                    placeholder="Your name" disabled={feedbackLoading}
-                    style={{width:"100%",padding:"12px 14px",borderRadius:12,fontSize:14,fontWeight:500,outline:"none",
-                      fontFamily:"'Poppins',sans-serif",color:C.t1,background:"#F5F3FF",
-                      border:`1.5px solid ${C.bdr}`,boxSizing:"border-box",
-                      transition:"all .2s"}} onFocus={e=>{e.target.style.background="#fff";e.target.style.borderColor=C.brand;}}
-                    onBlur={e=>{e.target.style.background="#F5F3FF";e.target.style.borderColor=C.bdr;}}/>
-                </div>
-                <div>
-                  <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                    textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Email *</label>
-                  <input type="email" value={feedbackEmail} onChange={e=>setFeedbackEmail(e.target.value)}
-                    placeholder="your@email.com" disabled={feedbackLoading}
-                    style={{width:"100%",padding:"12px 14px",borderRadius:12,fontSize:14,fontWeight:500,outline:"none",
-                      fontFamily:"'Poppins',sans-serif",color:C.t1,background:"#F5F3FF",
-                      border:`1.5px solid ${C.bdr}`,boxSizing:"border-box",
-                      transition:"all .2s"}} onFocus={e=>{e.target.style.background="#fff";e.target.style.borderColor=C.brand;}}
-                    onBlur={e=>{e.target.style.background="#F5F3FF";e.target.style.borderColor=C.bdr;}}/>
-                </div>
-                <div>
-                  <label style={{display:"block",fontSize:11,fontWeight:700,color:C.vi,
-                    textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>Message *</label>
-                  <textarea value={feedbackMsg} onChange={e=>setFeedbackMsg(e.target.value)}
-                    placeholder="Tell us what you think…" disabled={feedbackLoading}
-                    style={{width:"100%",padding:"12px 14px",borderRadius:12,fontSize:14,fontWeight:500,outline:"none",
-                      fontFamily:"'Poppins',sans-serif",color:C.t1,background:"#F5F3FF",
-                      border:`1.5px solid ${C.bdr}`,boxSizing:"border-box",minHeight:100,resize:"vertical",
-                      transition:"all .2s"}} onFocus={e=>{e.target.style.background="#fff";e.target.style.borderColor=C.brand;}}
-                    onBlur={e=>{e.target.style.background="#F5F3FF";e.target.style.borderColor=C.bdr;}}/>
-                </div>
-                <div style={{display:"flex",gap:10,marginTop:8}}>
-                  <button type="button" onClick={()=>setFeedbackOpen(false)} disabled={feedbackLoading}
-                    style={{flex:1,padding:"12px",borderRadius:12,border:`1.5px solid ${C.bdr}`,
-                      background:"white",color:C.t1,fontWeight:700,fontSize:14,cursor:"pointer",
-                      fontFamily:"'Poppins',sans-serif",transition:"all .2s",opacity:feedbackLoading?.6:1}}>
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={feedbackLoading}
-                    style={{flex:1,padding:"12px",borderRadius:12,border:"none",background:G.brand,
-                      color:"white",fontWeight:700,fontSize:14,cursor:"pointer",
-                      fontFamily:"'Poppins',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-                      transition:"all .2s",opacity:feedbackLoading?.7:1}}>
-                    {feedbackLoading?(
-                      <svg style={{width:16,height:16,animation:"spin 1s linear infinite"}} viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12"/>
-                      </svg>
-                    ):"Send"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
       </AnimatePresence>
-
-      {/* Floating Feedback Button */}
-      <motion.button
-        onClick={()=>setFeedbackOpen(true)}
-        whileHover={{scale:1.1}} whileTap={{scale:.95}}
-        style={{position:"fixed",bottom:80,right:20,zIndex:100,width:56,height:56,borderRadius:"50%",
-          border:"none",background:G.brand,color:"white",cursor:"pointer",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          boxShadow:"0 8px 24px rgba(99,102,241,.35)",fontWeight:700,fontSize:20}}>
-        💬
-      </motion.button>
     </>
   );
 }
