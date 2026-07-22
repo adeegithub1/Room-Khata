@@ -51,7 +51,9 @@ function Sheet({ onClose, children }) {
 
 /* ── Payment Sheet ── */
 function PaymentSheet({ room, ownerUpiId, ownerName, onClose, onDone }) {
-  const due = (room.balanceDue > 0 ? room.balanceDue : (room.rent||0)+(room.electricityBill||0));
+  const due = room.status==="partial" && room.balanceDue > 0
+    ? room.balanceDue
+    : (room.rent||0)+(room.electricityBill||0);
   const upi = ownerUpiId?.trim() || "";
   const [step,    setStep]    = useState("choose"); // choose | confirm | done
   const [appUsed, setAppUsed] = useState("");
@@ -610,6 +612,14 @@ export default function TenantDashboardView() {
                   background:"rgba(99,102,241,.2)",border:"1px solid rgba(129,140,248,.3)"}}>
                   <p style={{fontSize:12,color:"#C7D2FE",fontWeight:600}}>
                     👀 Payment verified होने का wait करें
+                  </p>
+                </div>
+              )}
+              {status==="partial"&&room.balanceDue>0&&(
+                <div style={{marginTop:10,padding:"8px 12px",borderRadius:10,
+                  background:"rgba(245,158,11,.2)",border:"1px solid rgba(252,211,77,.3)"}}>
+                  <p style={{fontSize:12,color:"#FCD34D",fontWeight:600}}>
+                    ◑ Partial payment received. Balance due: {inr(room.balanceDue)}
                   </p>
                 </div>
               )}
