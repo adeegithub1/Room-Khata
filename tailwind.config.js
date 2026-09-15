@@ -7,20 +7,26 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Poppins"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans:    ['"IBM Plex Sans"', '"IBM Plex Sans Devanagari"', 'sans-serif'],
+        serif:   ['"Fraunces"', 'serif'],
+        mono:    ['"IBM Plex Mono"', 'monospace'],
       },
       colors: {
-        saffron:  { DEFAULT: '#FF6600', 2: '#FF8C00' },
-        gold:     { DEFAULT: '#F59E0B', 2: '#D97706' },
-        indigo:   { DEFAULT: '#2D1B69', 2: '#4C1D95' },
-        emerald:  { DEFAULT: '#059669' },
-        rose:     { DEFAULT: '#E11D48' },
-        cream:    '#F4F6FB',
-        surface:  { DEFAULT: '#FFFFFF', 2: '#F4F6FB' },
-        border:   '#ECEEF4',
+        // Ledger-book palette — grounded in the "khata" (account book) metaphor
+        paper:    { DEFAULT: '#F3EAD3', light: '#FFFDF7', dark: '#E7DBB8' },
+        ink:      { DEFAULT: '#1E2A2F', 2: '#3A4A4F', soft: '#5C6B6E' },
+        rule:     { DEFAULT: '#C7B896', light: '#E2D6B4' },
+        stamp:    { DEFAULT: '#8C2F1E', 2: '#6E2416' },   // oxblood — primary actions
+        brass:    { DEFAULT: '#9C7A2E', 2: '#7C601F' },   // secondary / tenant accent
+        sage:     { DEFAULT: '#3F6B4C', 2: '#2E5038' },   // paid / success
+        rust:     { DEFAULT: '#B5532A' },                  // due / pending
+        // legacy aliases kept so any un-migrated screens don't break
+        cream:    '#F3EAD3',
+        surface:  { DEFAULT: '#FFFDF7', 2: '#F3EAD3' },
+        border:   '#C7B896',
       },
       animation: {
+        stamp:      'stamp 0.4s cubic-bezier(0.2,1.4,0.4,1) both',
         shimmer:    'shimmer 2s infinite',
         slideIn:    'slideIn 0.6s cubic-bezier(0.16,1,0.3,1)',
         fadeUp:     'fadeUp 0.5s ease-out',
@@ -41,6 +47,7 @@ export default {
         pulse2:     { '0%, 100%': { opacity: '1' },                           '50%': { opacity: '0.5' } },
         scaleFadeIn:{ '0%': { opacity:'0', transform:'scale(.94) translateY(16px)' }, '100%': { opacity:'1', transform:'scale(1) translateY(0)' } },
         slideUpBouncy: { '0%': { opacity:'0', transform:'translateY(36px)' }, '65%': { transform:'translateY(-5px)' }, '100%': { opacity:'1', transform:'translateY(0)' } },
+        stamp: { '0%': { opacity:'0', transform:'scale(2.2) rotate(-14deg)' }, '60%': { opacity:'1', transform:'scale(0.9) rotate(-6deg)' }, '100%': { opacity:'1', transform:'scale(1) rotate(-6deg)' } },
       },
       boxShadow: {
         sm:  '0 2px 8px rgba(30,27,75,0.07)',
