@@ -6,20 +6,22 @@
    DESIGN TOKENS
 ═══════════════════════════════════════════════════════════ */
 :root {
-  --brand:      #FF6B35;
-  --brand2:     #F5A623;
-  --violet:     #4158D0;
-  --violet2:    #C850C0;
-  --indigo:     #1E1B4B;
-  --emerald:    #00C9A7;
-  --rose:       #FB7185;
-  --surface:    #FFFFFF;
-  --surface2:   #F5F3FF;
-  --border:     #EDE9FE;
-  --text:       #1A1D2E;
-  --text2:      #6B7280;
-  --text3:      #A0AEC0;
-  --hdr-bg:     #07050F;
+  /* Ledger-book palette */
+  --paper:      #F3EAD3;
+  --paper-lt:   #FFFDF7;
+  --paper-dk:   #E7DBB8;
+  --ink:        #1E2A2F;
+  --ink-2:      #3A4A4F;
+  --ink-soft:   #5C6B6E;
+  --rule:       #C7B896;
+  --rule-lt:    #E2D6B4;
+  --stamp:      #8C2F1E;
+  --stamp-2:    #6E2416;
+  --brass:      #9C7A2E;
+  --brass-2:    #7C601F;
+  --sage:       #3F6B4C;
+  --rust:       #B5532A;
+  --hdr-bg:     #1E2A2F;
   --nav-h:      62px;
   --safe-b:     env(safe-area-inset-bottom, 0px);
 }
@@ -42,8 +44,8 @@ html, body, #root {
 html { font-size: 16px; }
 
 body {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #07050F;
+  font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--ink);
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
 }
@@ -62,9 +64,13 @@ body {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
-  background: var(--surface2);
+  background: var(--paper);
   display: flex;
   flex-direction: column;
+  /* faint paper-grain — subtle, not decorative noise */
+  background-image:
+    radial-gradient(rgba(30,42,47,.025) 1px, transparent 1px);
+  background-size: 3px 3px;
 }
 
 @media (min-width: 520px) {
@@ -108,3 +114,68 @@ body {
 ═══════════════════════════════════════════════════════════ */
 .tap { transition: transform 0.1s, opacity 0.1s; }
 .tap:active { transform: scale(0.94); opacity: 0.85; }
+
+/* ═══════════════════════════════════════════════════════════
+   LEDGER SYSTEM — ruled rows, dotted leaders, stamp badges,
+   receipt-slip edges. Shared vocabulary across every screen.
+═══════════════════════════════════════════════════════════ */
+
+/* Label-left / value-right ledger row, dotted leader between */
+.ledger-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ledger-row .leader {
+  flex: 1;
+  border-bottom: 1.5px dotted var(--rule);
+  margin-bottom: 4px;
+  min-width: 12px;
+}
+
+/* Receipt-slip card: soft edge + torn top via mask */
+.receipt-slip {
+  background: var(--paper-lt);
+  border: 1px solid var(--rule-lt);
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 0 1px 0 var(--rule-lt), 0 6px 16px rgba(30,42,47,.08);
+}
+.receipt-slip::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: 0; right: 0;
+  height: 8px;
+  background-image: radial-gradient(circle at 6px 0, transparent 4px, var(--paper) 4.5px);
+  background-size: 12px 8px;
+  background-repeat: repeat-x;
+}
+
+/* Ink-stamp status badge — rotated, bordered like a rubber stamp */
+.stamp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: .03em;
+  padding: 3px 9px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(-4deg);
+  background: transparent;
+}
+
+/* Focus visibility — accessibility floor */
+:focus-visible {
+  outline: 2.5px solid var(--stamp);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
