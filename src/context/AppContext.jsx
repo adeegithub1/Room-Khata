@@ -11,14 +11,14 @@
 //    the same result on every device for the same Firebase user.
 //
 //  Role resolution order:
-//    1. ownerProfiles collection  (field uid == user.uid)
+//    1. ownerProfiles collection  (doc id  == user.uid)
 //    2. tenantProfiles collection (doc id  == user.uid)
 //    3. null  (brand-new user, goes to /onboarding)
 // ─────────────────────────────────────────────────────────────
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, getDoc, query, where, doc } from "firebase/firestore";
+import { getDoc, doc } from "firebase/firestore";
 import { auth, db } from "../firebase/config";
 
 const AppContext = createContext(null);
@@ -40,11 +40,9 @@ export function AppProvider({ children }) {
   const resolveRole = useCallback(async (user) => {
     if (!user) { setUserRole(null); return; }
     try {
-      // 1. Check ownerProfiles — matches on uid field
-      const ownerSnap = await getDocs(
-        query(collection(db, "ownerProfiles"), where("uid", "==", user.uid))
-      );
-      if (!ownerSnap.empty) {
+      // 1. Check ownerProfiles — doc ID === tenantUid (same pattern as tenantProfiles)
+      const ownerDoc = await getDoc(doc(db, "ownerProfiles", user.uid));
+      if (ownerDoc.exists()) {
         setUserRole("owner");
         return;
       }
